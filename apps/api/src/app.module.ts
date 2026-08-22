@@ -6,6 +6,7 @@ import { EventsModule } from './infra/events/events.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { ProjectsModule } from './modules/projects/projects.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
     // Domain modules (added incrementally): AuthModule, UsersModule, CatalogModule,
     // ProjectsModule, SubscriptionsModule, PaymentsModule, ImpactModule, NotificationsModule
     CatalogModule,
+    ProjectsModule,
   ],
 })
 export class AppModule {}
