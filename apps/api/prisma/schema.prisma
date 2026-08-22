@@ -9,16 +9,208 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Enums below must mirror packages/shared/src/enums.ts exactly (same commit rule)
 enum Role {
   USER
   ADMIN
 }
 
+enum PlanId {
+  basico
+  estandar
+  premium
+}
+
+enum Billing {
+  monthly
+  annual
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+}
+
+enum PaymentStatus {
+  SUCCEEDED
+  FAILED
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum JourneySource {
+  SUBSCRIPTION
+  FOLLOW
+  EVENT
+}
+
+enum NotificationType {
+  WELCOME
+  PROJECT_UPDATE
+  SUBSCRIPTION
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         Role     @default(USER)
-  createdAt    DateTime @default(now())
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  passwordHash        String
+  name                String
+  role                Role     @default(USER)
+  onboardingCompleted Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
+
+  subscriptions   Subscription[]
+  follows         ProjectFollow[]
+  journeyPoints   JourneyPoint[]
+  notifications   Notification[]
+  createdProjects Project[]       @relation("ProjectCreatedBy")
+  authoredUpdates ProjectUpdate[] @relation("ProjectUpdateAuthor")
+}
+
+model Plan {
+  id                 PlanId  @id
+  name               String
+  monthlyPrice       Int
+  annualMonthlyPrice Int
+  annualTotal        Int
+  recommended        Boolean @default(false)
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id         String             @id @default(cuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id])
+  planId     PlanId
+  plan       Plan               @relation(fields: [planId], references: [id])
+  billing    Billing
+  status     SubscriptionStatus @default(ACTIVE)
+  startedAt  DateTime           @default(now())
+  canceledAt DateTime?
+
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
+  amount         Int // amount in cents
+  currency       String        @default("USD")
+  status         PaymentStatus
+  cardBrand      String
+  cardLast4      String        @db.VarChar(4) // last4 only - the full card number never reaches the server
+  simulated      Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+}
+
+model Zone {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  description String
+  imageKey    String
+  order       Int
+
+  projects Project[]
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  zoneId      String
+  zone        Zone          @relation(fields: [zoneId], references: [id])
+  title       String
+  summary     String
+  description String
+  status      ProjectStatus @default(ACTIVE)
+  progress    Int           @default(0)
+  targetDate  DateTime?
+  lat         Float?
+  lng         Float?
+  coverKey    String?
+  createdById String?
+  createdBy   User?         @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  updates ProjectUpdate[]
+  follows ProjectFollow[]
+
+  @@index([zoneId])
+  @@index([status])
+}
+
+model ProjectUpdate {
+  id          String   @id // stable seed id, e.g. "<slug>-update-1", not a cuid default
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  progress    Int
+  mediaKey    String?
+  publishedAt DateTime @default(now())
+  authorId    String?
+  author      User?    @relation("ProjectUpdateAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+}
+
+model ProjectFollow {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, projectId])
+}
+
+model JourneyPoint {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  month     String // format YYYY-MM
+  source    JourneySource
+  refId     String?
+  createdAt DateTime      @default(now())
+
+  // natural key so the impact listener can upsert idempotently on userId+month+source
+  @@unique([userId, month, source])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  body      String
+  refId     String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  // natural key so notification listeners can upsert idempotently on userId+type+refId
+  @@unique([userId, type, refId])
+  @@index([userId])
+}
+
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  type        String
+  payload     Json
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  attempts    Int       @default(0)
+
+  @@index([processedAt])
 }
