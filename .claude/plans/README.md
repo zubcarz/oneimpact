@@ -1,5 +1,7 @@
 # Planes de implementacion
 
+Los items y su orden estan en `../roadmap/ROADMAP.md`; cada plan nace de un spec de `../roadmap/specs/`.
+
 Ciclo: `/gen-plan` -> `/run-plan-guided | autonomous | worktree` -> `/verify` ->
 `/review-pr` -> `/merge-plan` (si worktree) -> `/ai-log`.
 
@@ -15,4 +17,4 @@ Ciclo: `/gen-plan` -> `/run-plan-guided | autonomous | worktree` -> `/verify` ->
 
 | Plan | Area | Estado |
 |---|---|---|
-| `20260822-mobile-foundation-and-home.plan.md` | mobile | pendiente |
+| `20260822-mobile-foundation-and-home.plan.md` | mobile | ejecutado en main (`03bf7dd..48c6788`) |

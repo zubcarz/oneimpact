@@ -67,7 +67,7 @@ Generators: `/gen-screen` (mobile screen from its vault spec), `/gen-module`
 ## Common commands
 
 ```bash
-pnpm setup            # install + docker postgres + migrate + seed
+pnpm run setup        # install + docker postgres + migrate + seed (bare "pnpm setup" is a pnpm built-in)
 pnpm dev:api | dev:admin | dev:mobile | dev:all
 pnpm typecheck | lint | test | build
 bash scripts/dev/quality-check.sh --scope all

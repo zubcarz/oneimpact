@@ -21,7 +21,7 @@ Everything runs on your machine: Postgres in Docker, API + admin as Node process
 
 ## 1. One-shot setup
 ```bash
-pnpm setup        # pnpm install + docker compose up -d + prisma migrate + seed
+pnpm run setup    # ("run" is required: bare "pnpm setup" is a pnpm built-in) pnpm install + docker compose up -d + prisma migrate + seed
 ```
 Or step by step:
 ```bash

@@ -46,9 +46,16 @@ discrepancia entre el vault y el codigo, el codigo gana y se anota en el vault
 
 ## Estado actual del repo (actualizar al cerrar sesiones grandes)
 
-- 2026-08-22: scaffold del monorepo verificado (typecheck/tests verdes, API con
-  Postgres local, `/health` y `/docs` OK, bundle Metro OK). Pantallas base
-  placeholder en mobile y admin. Ningun modulo de dominio en la API todavia.
+- 2026-08-22: scaffold verificado; tooling Claude; item 00 (fundacion mobile +
+  Inicio completo) hecho en `03bf7dd..48c6788`. API solo con `health`; admin
+  placeholder. Siguiente: roadmap ola 0 (spec 01).
+
+## Roadmap
+
+`.claude/roadmap/ROADMAP.md` define los 15 items, sus dependencias, que lanes
+corren en paralelo y en que ola. Cada item tiene su spec en
+`.claude/roadmap/specs/NN-<slug>.md`: es la **entrada** de `/gen-plan`. Antes de
+planificar algo, comprobar que item del roadmap es y si su ola ya esta habilitada.
 
 ## Flujo esperado
 

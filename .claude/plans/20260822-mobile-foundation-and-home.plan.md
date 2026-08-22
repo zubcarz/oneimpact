@@ -1,6 +1,7 @@
 # Plan -- Fundacion mobile + pantalla Inicio (por fases, checkpoint por fase)
 
 > **Fecha**: 2026-08-22
+> **Estado**: ejecutado en main (`03bf7dd..48c6788`), roadmap item 00
 > **Origen**: Modo A -- pantalla `inicio` del vault + componentes base que toda la app reutiliza
 > **Base**: `02-Analisis-Visual/pantallas/inicio.md`, `componentes.md`, `design-tokens.md`, `tipografia-y-estilo.md`, `01-Tecnologia-Arquitectura/arquitectura-mobile.md`
 > **Areas**: mobile (+ `packages/ui-tokens` solo lectura)

@@ -1,10 +1,28 @@
-import { Text, View } from 'react-native';
+import { useState } from 'react';
+import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
+import {
+  AlliesSection,
+  HeroSection,
+  StatsBanner,
+  Testimonials,
+  VideoSection,
+  ZonesCarousel,
+} from '@/features/home';
 
 export default function IndexScreen() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <View className="flex-1 items-center justify-center bg-cream">
-      <Text className="text-3xl font-bold text-gray-900">Inicio</Text>
-      <Text className="mt-2 text-gray-500">One Impact · pantalla base</Text>
-    </View>
+    <Screen statusBar="light" bg="bg-white">
+      <Header logo="white" onMenuPress={() => setMenuOpen(true)} />
+      <FullScreenMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <HeroSection />
+      <VideoSection />
+      <ZonesCarousel />
+      <Testimonials />
+      <AlliesSection />
+      <StatsBanner />
+      <Footer />
+    </Screen>
   );
 }

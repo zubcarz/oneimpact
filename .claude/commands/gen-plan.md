@@ -19,6 +19,12 @@ UI tiene un spec exacto en el vault.
 
 ## Modos de entrada
 
+- **R) Spec del roadmap (preferido)** -- `$ARGUMENTS` es una ruta
+  `.claude/roadmap/specs/NN-<slug>.md`. El spec ya trae objetivo, alcance,
+  write-scope, invariantes, criterios de aceptacion y commits sugeridos: el plan
+  los **respeta** y solo agrega el analisis de codigo y el corte en fases. Usa
+  el slug del spec para nombrar el plan y la rama que el spec indica.
+
 - **A) Pantalla o seccion mobile** -- `$ARGUMENTS` nombra algo que existe en el
   vault (`02-Analisis-Visual/pantallas/*.md`). El spec es la Base del plan.
 - **B) Modulo o endpoint de la API** -- Base: `01-Tecnologia-Arquitectura/
