@@ -1,10 +1,18 @@
-import { Text, View } from 'react-native';
+import { useState } from 'react';
+import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
+import { AdvancesCarousel, ZonesHero, ZonesList } from '@/features/zones';
 
 export default function ZonesScreen() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <View className="flex-1 items-center justify-center bg-cream">
-      <Text className="text-3xl font-bold text-gray-900">Zonas</Text>
-      <Text className="mt-2 text-gray-500">One Impact · pantalla base</Text>
-    </View>
+    <Screen statusBar="dark" bg="bg-cream">
+      <Header logo="black" onMenuPress={() => setMenuOpen(true)} />
+      <FullScreenMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <ZonesHero />
+      <ZonesList />
+      <AdvancesCarousel />
+      <Footer />
+    </Screen>
   );
 }

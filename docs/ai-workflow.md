@@ -191,3 +191,56 @@ el spec 02 para que el item 12 no repita la premisa.
 mergeada**: cierra con `/merge-plan api-catalog-and-projects`. Nota para 05: el
 decorador `@Public()` existe pero es inerte, no hay guard global todavia; al
 agregar `JwtAuthGuard` hay que decidir si `plans`/`zones`/`projects` lo llevan.
+## 2026-08-22 -- Pantalla Zonas y detalle de zona [mobile-zones-screens]
+
+**Pedido**: generar y ejecutar el plan del item 03 del roadmap
+(`.claude/roadmap/specs/03-mobile-zones-screens.md`): pantalla Zonas fiel al
+spec del vault y el detalle `/zone/[slug]`, alimentados por el dataset unico
+del item 01. Plan: `.claude/plans/20260822-mobile-zones-screens.plan.md`.
+**Herramientas**: `/gen-plan` sobre el spec y `/run-plan-worktree` (worktree
+`.claude/worktrees/mobile-zones-screens`, rama `feat/mobile-zones-screens`),
+en paralelo con el item 02 en su propio worktree; agentes `implementer` (4
+invocaciones) y `verifier` (por fase y `--scope all`); `/ai-log`. El `debugger`
+no hizo falta.
+**Entrego**: `f458a55` (token `topoLine` en ui-tokens + el plan), `2345851`
+(`src/data/zones.ts` derivando zonas y avances del seed de shared, con mapa de
+assets y 7 tests), `508e4d6` (ZoneRow, AdvanceCard, ProgressBar + tests),
+`a00604b` (pantalla Zonas: hero con las 10 lineas topograficas en
+react-native-svg, lista de 5 zonas, carrusel forest con dots, footer),
+`5e593a8` (detalle de zona con hero 55vh, estado vacio, pantalla "Zona no
+encontrada" y 3 tests RNTL).
+**Revision**: gate por fase con `quality-check.sh` acotado; `--only bundle`
+(expo export) en las fases que cambiaban lo que entra al bundle; lectura del
+diff con grep de hex sueltos y supresiones; al cierre `--scope all`. Verde:
+typecheck en los 7 workspaces, lint de mobile, 28 tests de mobile en 8 suites,
+17 de shared, 5 de api-client, bundle y playwright del admin.
+**Ajustes manuales**: (1) El riesgo real del item se resolvio en el analisis,
+no durante la ejecucion: **mobile nunca habia importado `@oneimpact/shared`** y
+el item 01 lo dejo como CommonJS en `dist` con `exports`. Se comprobo antes de
+escribir el plan con tres probes descartables (tsc, jest y un `expo export` con
+una ruta temporal que confirmo que el copy del seed entra al bundle), asi que
+ninguna fase necesito tocar `metro.config.js`. (2) `#5a7045`, el trazo de las
+lineas topograficas, no existia como token: se agrego `topoLine` a
+`packages/ui-tokens` y se anoto en el vault `design-tokens.md`. Esto extiende
+en un archivo el write-scope del spec; se hizo porque la regla de "colores solo
+por token" pesa mas que la lista de archivos. (3) **El plan se equivoco** al
+pedir `useRef` para `onViewableItemsChanged`: choca con la regla de lint
+`react-hooks/refs` del repo. El implementer lo detecto y lo resolvio con
+`useCallback` y una constante de modulo, que da la misma identidad estable. Se
+acepto su correccion. (4) El spec 03 pedia un "mapa slug <-> zona" que no hace
+falta: cada proyecto del seed ya trae su `zoneSlug`. (5) Antes de ejecutar se
+corrigio el propio spec 03 (`52fd5d7`) con la decision del estado vacio de
+`patagonia` y con los nombres reales que exporta shared, que no coincidian.
+**Pendiente**: verificacion visual en Expo Go (lineas topograficas al 12 % con
+recorte `slice`, header negro sobre crema, snap del carrusel y dots, blur del
+boton back, safe area en el notch, deep link `oneimpact://zone/amazonia`).
+Dos limitaciones del modo worktree que conviene arreglar en el comando: `git
+worktree add` no copia los `.env` (gitignorados), asi que el e2e de la API falla
+con `Environment variable not found: DATABASE_URL`; y `docker compose ps`
+ejecutado desde el worktree usa el nombre del directorio como proyecto, no ve
+`oneimpact-db-1` y el gate salta el e2e de la API. Ninguna de las dos afecta a
+esta rama, que es solo mobile, y no se forzo el e2e porque habia un plan de API
+corriendo en paralelo sobre la misma base. Sobre `apps/api lint`, que esta rama
+reporto como rojo preexistente (`02d45d4`): el item 02 lo arreglo en `378cd25`
+al borrar un `.prettierrc` residual del scaffold de Nest, asi que al integrar
+ambas ramas quedo en verde.
