@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* One Impact design tokens (mirror of packages/ui-tokens) */
+@theme {
+  --color-accent: #c8d400;
+  --color-accent-dark: #a8b200;
+  --color-accent-light: #dbe64c;
+  --color-forest: #0f1a0a;
+  --color-dark-green: #243b1a;
+  --color-ink: #1e1e1e;
+  --color-slate: #2d3a42;
+  --color-cream: #f0ece4;
+  --color-cream-warm: #fff6ea;
+  --color-cream-card: #fff1da;
+  --color-highlight: #ffe97a;
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: var(--color-cream);
+  color: #101828;
+  font-family: var(--font-sans);
+}

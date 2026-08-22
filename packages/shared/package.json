@@ -1,0 +1,24 @@
+{
+  "name": "@oneimpact/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "echo skip",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@oneimpact/config": "workspace:*",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

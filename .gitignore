@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.next/
+.expo/
+.turbo/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+ios/
+android/
+playwright-report/
+test-results/

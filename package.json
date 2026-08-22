@@ -1,0 +1,24 @@
+{
+  "name": "oneimpact",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:mobile": "pnpm --filter @oneimpact/mobile start",
+    "dev:api": "pnpm --filter @oneimpact/api start:dev",
+    "dev:admin": "pnpm --filter @oneimpact/admin dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.10.11",
+    "typescript": "^5.7.2"
+  }
+}
