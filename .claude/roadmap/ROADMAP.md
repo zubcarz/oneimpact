@@ -125,7 +125,7 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 |---|---|---|---|
 | 00 | mobile-foundation-and-home | hecho | `03bf7dd..48c6788` en main |
 | 01 | shared-contract-and-seed | pendiente | |
-| 02 | api-catalog-and-projects | pendiente | |
+| 02 | api-catalog-and-projects | hecho | `378cd25..7e849be` en `feat/api-catalog-and-projects` |
 | 03 | mobile-zones-screens | pendiente | |
 | 04 | mobile-subscription-screen | pendiente | |
 | 05 | api-auth-and-roles | pendiente | |
