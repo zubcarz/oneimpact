@@ -124,10 +124,10 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 | # | Item | Estado | Rama / commits |
 |---|---|---|---|
 | 00 | mobile-foundation-and-home | hecho | `03bf7dd..48c6788` en main |
-| 01 | shared-contract-and-seed | pendiente | |
-| 02 | api-catalog-and-projects | hecho | `378cd25..7e849be` en `feat/api-catalog-and-projects` |
-| 03 | mobile-zones-screens | pendiente | |
-| 04 | mobile-subscription-screen | pendiente | |
+| 01 | shared-contract-and-seed | hecho | `9dd3061..104e58c` en main |
+| 02 | api-catalog-and-projects | hecho | `378cd25..0d8ac58`, mergeado a main en `fc142c9` |
+| 03 | mobile-zones-screens | hecho | `f458a55..ec6f416`, mergeado a main en `d01d14b` |
+| 04 | mobile-subscription-screen | hecho | `bdc84ae..11443dc` en `feat/mobile-subscription-screen` |
 | 05 | api-auth-and-roles | pendiente | |
 | 06 | api-payments-subscriptions-events | pendiente | |
 | 07 | mobile-data-layer-and-auth | pendiente | |
