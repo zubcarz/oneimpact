@@ -10,6 +10,7 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthUsersRepository } from './infrastructure/auth-users.repository';
 import { RefreshTokenRepository } from './infrastructure/refresh-token.repository';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 /**
@@ -31,6 +32,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
  * `@UseGuards(ThrottlerGuard)` only on `AuthController`, not as another
  * `APP_GUARD`: a global throttler would also rate-limit the public catalog
  * and projects endpoints, causing intermittent 429s in their e2e suites.
+ *
+ * `RolesGuard` is registered here too, as the SECOND `APP_GUARD` entry. Nest
+ * resolves `APP_GUARD` providers in registration order and runs them in that
+ * same order, so it always executes after `JwtAuthGuard`: by the time it
+ * reads `request.user.role`, `JwtAuthGuard`/`JwtStrategy` has already either
+ * populated it (protected route with a valid token) or short-circuited the
+ * request (missing/invalid token, unless `@Public()`). See `roles.guard.ts`
+ * for what happens when `request.user` is still missing at that point.
  */
 @Module({
   imports: [
@@ -54,6 +63,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     RefreshTokenRepository,
     JwtStrategy,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AuthModule {}
