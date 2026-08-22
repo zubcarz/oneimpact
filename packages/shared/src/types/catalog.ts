@@ -1,45 +1,18 @@
-import type { ProjectStatus } from '../enums';
+import type { z } from 'zod';
 import type { Plan } from '../plans';
+import type {
+  zoneSchema,
+  projectSchema,
+  projectUpdateSchema,
+  projectWithUpdatesSchema,
+} from '../schemas/catalog';
 
 export type { Plan };
 
-export interface Zone {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  imageKey: string;
-  order: number;
-}
+export type Zone = z.infer<typeof zoneSchema>;
 
-export interface Project {
-  id: string;
-  slug: string;
-  zoneId: string;
-  title: string;
-  summary: string;
-  description: string;
-  status: ProjectStatus;
-  progress: number;
-  targetDate?: string;
-  lat?: number;
-  lng?: number;
-  coverKey?: string;
-  createdAt: string;
-}
+export type Project = z.infer<typeof projectSchema>;
 
-export interface ProjectUpdate {
-  id: string;
-  projectId: string;
-  title: string;
-  body: string;
-  progress: number;
-  mediaKey?: string;
-  publishedAt: string;
-  authorId?: string;
-}
+export type ProjectUpdate = z.infer<typeof projectUpdateSchema>;
 
-export type ProjectWithUpdates = Project & {
-  updates: ProjectUpdate[];
-  zone?: Zone;
-};
+export type ProjectWithUpdates = z.infer<typeof projectWithUpdatesSchema>;
