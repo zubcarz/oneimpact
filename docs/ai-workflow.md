@@ -81,3 +81,55 @@ errores de prettier en `env.ts`, `prisma.service.ts`, `health.controller.ts` y
 un `no-unsafe-member-access` en `test/app.e2e-spec.ts`); conviene un
 `chore(api)` aparte. `next dev` reescribe `apps/admin/CLAUDE.md` con un bloque
 auto-generado al correr Playwright; quedo sin commitear para decidirlo a mano.
+
+## 2026-08-22 -- Contrato de dominio, modelo Prisma y seed unico [shared-contract-and-seed]
+
+**Pedido**: generar y ejecutar el plan del item 01 del roadmap
+(`.claude/roadmap/specs/01-shared-contract-and-seed.md`): tipos y schemas en
+`packages/shared`, modelo Prisma completo, seed unico con los datos reales de
+la web y `packages/api-client` tipado. Plan resultante:
+`.claude/plans/20260822-shared-contract-and-seed.plan.md`.
+**Herramientas**: `/gen-plan` sobre el spec del roadmap y
+`/run-plan-autonomous` en la rama `feat/shared-contract-and-seed`; skills
+`oneimpact-context` y `quality-guardrails`; agentes `implementer` (5
+invocaciones, una por tarea) y `verifier` (por fase y `--scope all` al cierre);
+`/ai-log`. El `debugger` no hizo falta.
+**Entrego**: `9dd3061` (shared compila a `dist` CJS + el plan), `95661d1`
+(enums `PaymentStatus`/`JourneySource`/`NotificationType` y `ENUM_VALUES`,
+tipos de catalogo/auth/suscripcion, schemas zod de proyectos, `API_PATHS`,
+`seed-data.ts` con 5 zonas y 5 proyectos, 17 tests Vitest), `c552612` (schema
+Prisma completo con 11 modelos y claves naturales de idempotencia, migracion
+`20260822193637_domain_model`, seed desde `@oneimpact/shared/seed-data`, e2e
+que corre el seed dos veces), `43c9155` (api-client con todo el contrato REST
+partido por recurso, 5 tests con fetch stubeado).
+**Revision**: gate por fase con `quality-check.sh` acotado al scope; lectura
+del diff de cada fase por el orquestador, con grep explicito de supresiones y
+del invariante del PAN; `pnpm run db:setup` desde base vacia
+(`docker compose down -v`) para comprobar el criterio de aceptacion del spec:
+5 zonas, 5 proyectos, 5 updates, 3 planes, 2 usuarios; seed corrido tres veces
+sin duplicar. Cierre `--scope all`: shared/ui-tokens/api-client/mobile/admin
+verdes (17 + 5 + 12 tests, bundle expo OK, playwright OK), api typecheck y e2e
+verdes (9 tests).
+**Ajustes manuales**: (1) El hallazgo mayor del analisis: **la API no podia
+importar `@oneimpact/shared`**. Se comprobo con dos probes descartables: `tsc`
+de la API (module nodenext) fallaba con `TS2835` y `ts-node` del seed con
+`ERR_REQUIRE_ESM`, porque shared exportaba `.ts` crudo como ESM. Nadie lo habia
+notado porque ninguna app lo importaba todavia. Se resolvio compilando shared a
+`dist` CommonJS con `tsc` (fase 1 agregada al plan, no estaba en el spec).
+(2) `prisma migrate dev` se nego a aplicar la migracion: `updatedAt` requerido
+sin default sobre una tabla `User` con 2 filas; se le puso `@default(now())` en
+vez de resetear la DB. (3) Decisiones de contrato que el vault no definia y se
+tomaron a mano, anotadas en el propio vault: enums en minuscula (gana el
+codigo), `Project.slug` y `ProjectUpdate.id` estables como claves naturales del
+seed, imagenes como claves de asset relativas en vez de URLs inventadas, y
+valores propuestos de `progress`/`lat`/`lng`/`targetDate` marcados
+`// proposed` en `seed-data.ts`. (4) El implementer noto, correctamente, que en
+Postgres los `NULL` no colisionan en un `@@unique`, asi que la idempotencia de
+`Notification` exige que el listener use un `refId` estable; queda anotado para
+el item 06.
+**Pendiente**: verificacion manual en `prisma studio` de las relaciones
+Project->Zone y ProjectUpdate->Project. `apps/api lint` sigue rojo desde el
+scaffold (`02d45d4`, 5 errores); se confirmo con `git diff main...HEAD` que
+ninguno de esos archivos lo toca esta rama, asi que no bloquea: pide un
+`chore(api)` aparte. Los items 02, 03, 05 y 07 del roadmap ya pueden arrancar
+sobre este contrato.
