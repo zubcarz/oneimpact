@@ -1,18 +1,8 @@
-import type { Role } from '../enums';
+import type { z } from 'zod';
+import type { authResponseSchema, authTokensSchema, userProfileSchema } from '../schemas/auth';
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+export type AuthTokens = z.infer<typeof authTokensSchema>;
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  role: Role;
-}
+export type UserProfile = z.infer<typeof userProfileSchema>;
 
-export interface AuthResponse {
-  user: UserProfile;
-  tokens: AuthTokens;
-}
+export type AuthResponse = z.infer<typeof authResponseSchema>;
