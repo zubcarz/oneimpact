@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { cx } from './cx';
 
@@ -14,7 +14,7 @@ const ACTIVE_WIDTH = 24; // w-6
 const TRANSITION_MS = 300;
 
 function Dot({ active }: { active: boolean }) {
-  const width = useRef(new Animated.Value(active ? ACTIVE_WIDTH : INACTIVE_WIDTH)).current;
+  const [width] = useState(() => new Animated.Value(active ? ACTIVE_WIDTH : INACTIVE_WIDTH));
 
   useEffect(() => {
     Animated.timing(width, {
