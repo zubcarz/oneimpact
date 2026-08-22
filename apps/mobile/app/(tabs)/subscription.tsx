@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import type { Billing, PlanId } from '@oneimpact/shared';
 import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
-import { SubscriptionCollage, SubscriptionPlans } from '@/features/subscription';
+import {
+  SubscriptionBenefits,
+  SubscriptionCollage,
+  SubscriptionPlans,
+} from '@/features/subscription';
 
 export default function SubscriptionScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -27,6 +31,7 @@ export default function SubscriptionScreen() {
         onPlanChange={setSelectedPlan}
         onCtaPress={handleCtaPress}
       />
+      <SubscriptionBenefits />
       <Footer />
     </Screen>
   );

@@ -38,3 +38,6 @@ export type { BillingToggleProps } from './BillingToggle';
 
 export { PlanSelector } from './PlanSelector';
 export type { PlanSelectorProps } from './PlanSelector';
+
+export { BenefitItem } from './BenefitItem';
+export type { BenefitItemProps } from './BenefitItem';

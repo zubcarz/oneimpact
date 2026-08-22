@@ -1,0 +1,12 @@
+export { IPassIcon } from './IPassIcon';
+export type { IPassIconProps } from './IPassIcon';
+export { ProjectsIcon } from './ProjectsIcon';
+export type { ProjectsIconProps } from './ProjectsIcon';
+export { JourneyIcon } from './JourneyIcon';
+export type { JourneyIconProps } from './JourneyIcon';
+export { AcademyIcon } from './AcademyIcon';
+export type { AcademyIconProps } from './AcademyIcon';
+export { WalletIcon } from './WalletIcon';
+export type { WalletIconProps } from './WalletIcon';
+export { EmergencyIcon } from './EmergencyIcon';
+export type { EmergencyIconProps } from './EmergencyIcon';
