@@ -5,6 +5,7 @@ import { validateEnv } from './infra/config/env';
 import { EventsModule } from './infra/events/events.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { HealthModule } from './modules/health/health.module';
     HealthModule,
     // Domain modules (added incrementally): AuthModule, UsersModule, CatalogModule,
     // ProjectsModule, SubscriptionsModule, PaymentsModule, ImpactModule, NotificationsModule
+    CatalogModule,
   ],
 })
 export class AppModule {}
