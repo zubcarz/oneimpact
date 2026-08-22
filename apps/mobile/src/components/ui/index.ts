@@ -23,3 +23,12 @@ export type { DotsProps } from './Dots';
 
 export { ImageCard } from './ImageCard';
 export type { ImageCardProps } from './ImageCard';
+
+export { ZoneRow } from './ZoneRow';
+export type { ZoneRowProps } from './ZoneRow';
+
+export { AdvanceCard } from './AdvanceCard';
+export type { AdvanceCardProps } from './AdvanceCard';
+
+export { ProgressBar } from './ProgressBar';
+export type { ProgressBarProps } from './ProgressBar';
