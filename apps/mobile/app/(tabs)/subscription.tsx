@@ -1,10 +1,33 @@
-import { Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert } from 'react-native';
+import type { Billing, PlanId } from '@oneimpact/shared';
+import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
+import { SubscriptionCollage, SubscriptionPlans } from '@/features/subscription';
 
 export default function SubscriptionScreen() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [billing, setBilling] = useState<Billing>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('estandar');
+
+  const handleCtaPress = () => {
+    // TODO(item 09): navegar a `/(auth)/register?plan=<id>&billing=<billing>`
+    // cuando esa ruta exista. Por ahora `/(auth)/register` no esta creada.
+    Alert.alert('Proximamente', 'El registro estara disponible muy pronto.');
+  };
+
   return (
-    <View className="flex-1 items-center justify-center bg-cream">
-      <Text className="text-3xl font-bold text-gray-900">Suscripción</Text>
-      <Text className="mt-2 text-gray-500">One Impact · pantalla base</Text>
-    </View>
+    <Screen statusBar="light" bg="bg-cream">
+      <Header logo="white" onMenuPress={() => setMenuOpen(true)} />
+      <FullScreenMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <SubscriptionCollage />
+      <SubscriptionPlans
+        billing={billing}
+        selectedPlan={selectedPlan}
+        onBillingChange={setBilling}
+        onPlanChange={setSelectedPlan}
+        onCtaPress={handleCtaPress}
+      />
+      <Footer />
+    </Screen>
   );
 }
