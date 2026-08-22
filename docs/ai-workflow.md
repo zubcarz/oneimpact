@@ -127,8 +127,13 @@ valores propuestos de `progress`/`lat`/`lng`/`targetDate` marcados
 Postgres los `NULL` no colisionan en un `@@unique`, asi que la idempotencia de
 `Notification` exige que el listener use un `refId` estable; queda anotado para
 el item 06.
-**Pendiente**: verificacion manual en `prisma studio` de las relaciones
-Project->Zone y ProjectUpdate->Project. `apps/api lint` sigue rojo desde el
+**Pendiente**: ninguna verificacion de datos pendiente. Las relaciones
+Project->Zone y ProjectUpdate->Project se comprobaron el 2026-08-22 contra la
+base (5 proyectos con zona valida segun el mapeo del vault, 5 updates con id
+estable y autor, tablas transaccionales aun vacias). Nota de dominio: la zona
+`patagonia` queda sin proyectos porque el vault solo define 5 avances y ninguno
+cae ahi; la pantalla de Zonas debe soportar el caso "zona sin proyectos" en vez
+de inventar un proyecto. `apps/api lint` sigue rojo desde el
 scaffold (`02d45d4`, 5 errores); se confirmo con `git diff main...HEAD` que
 ninguno de esos archivos lo toca esta rama, asi que no bloquea: pide un
 `chore(api)` aparte. Los items 02, 03, 05 y 07 del roadmap ya pueden arrancar
