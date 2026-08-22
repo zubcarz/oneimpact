@@ -1,10 +1,16 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthService } from './application/auth.service';
 import { TokensService } from './application/tokens.service';
 import { AuthController } from './controllers/auth.controller';
 import { AuthUsersRepository } from './infrastructure/auth-users.repository';
 import { RefreshTokenRepository } from './infrastructure/refresh-token.repository';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 /**
  * `JwtModule.register({})` on purpose: no global secret/options. Access and
@@ -12,14 +18,42 @@ import { RefreshTokenRepository } from './infrastructure/refresh-token.repositor
  * call site (`TokensService`), so a token issued for one never verifies
  * against the other's secret by accident.
  *
- * The global guard (`APP_GUARD`), `JwtStrategy` and `@Public()` on the
- * currently-open routes are added together in this plan's next phase --
- * registering the guard here now would 401 the whole API with no `@Public()`
- * anywhere to opt out.
+ * `JwtAuthGuard` is registered here as `APP_GUARD`, not with
+ * `app.useGlobalGuards()` in `main.ts`. `APP_GUARD` is a provider resolved
+ * from `AppModule`'s own graph, so any test that builds the app from
+ * `AppModule` (`test/utils/create-test-app.ts`) gets the exact same guard
+ * production does. Registering it in `main.ts` instead would leave the e2e
+ * suite open while production is closed -- the opposite of what this phase
+ * is for.
+ *
+ * `ThrottlerModule` is registered here too (`AUTH_THROTTLE_LIMIT` /
+ * `AUTH_THROTTLE_TTL_MS`, see `env.ts`) but is applied with
+ * `@UseGuards(ThrottlerGuard)` only on `AuthController`, not as another
+ * `APP_GUARD`: a global throttler would also rate-limit the public catalog
+ * and projects endpoints, causing intermittent 429s in their e2e suites.
  */
 @Module({
-  imports: [JwtModule.register({})],
+  imports: [
+    JwtModule.register({}),
+    PassportModule,
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: config.get<number>('AUTH_THROTTLE_TTL_MS', 60000),
+          limit: config.get<number>('AUTH_THROTTLE_LIMIT', 10),
+        },
+      ],
+    }),
+  ],
   controllers: [AuthController],
-  providers: [AuthService, TokensService, AuthUsersRepository, RefreshTokenRepository],
+  providers: [
+    AuthService,
+    TokensService,
+    AuthUsersRepository,
+    RefreshTokenRepository,
+    JwtStrategy,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AuthModule {}

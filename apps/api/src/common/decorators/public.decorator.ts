@@ -5,10 +5,10 @@ export const IS_PUBLIC_KEY = 'isPublic';
 /**
  * Marks a route/controller as not requiring authentication.
  *
- * There is no global auth guard yet, so this decorator has no effect today:
- * every route is reachable regardless of `@Public()`. It exists so that the
- * upcoming `JwtAuthGuard` (module `auth`, roadmap item 05) can invert the
- * default -- guard everything, then read this metadata to open the routes
- * marked `@Public()` -- without touching every controller again.
+ * `JwtAuthGuard` (module `auth`) is registered globally via `APP_GUARD`, so
+ * every route is protected by default. This decorator is the only opt-out:
+ * `JwtAuthGuard.canActivate` reads this metadata with
+ * `Reflector.getAllAndOverride` (handler and class) and skips the JWT check
+ * for anything marked `@Public()`.
  */
 export const Public = (): MethodDecorator & ClassDecorator => SetMetadata(IS_PUBLIC_KEY, true);

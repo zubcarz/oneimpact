@@ -1,6 +1,8 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { AuthResponse, AuthTokens } from '@oneimpact/shared';
+import { Public } from '../../../common/decorators/public.decorator';
 import { AuthService } from '../application/auth.service';
 import { AuthResponseDto, AuthTokensDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
@@ -12,23 +14,30 @@ import { RegisterDto } from './dto/register.dto';
  * `main.ts` (`setGlobalPrefix('v1', ...)`), so the real paths are
  * `/v1/auth/*`. See the same note on `plans.controller.ts`.
  *
- * No `@Public()` here yet: the global `JwtAuthGuard` does not exist until
- * this plan's guard phase, so today every route in the app -- including
- * these -- is already open. Applying `@Public()` before the guard exists
- * would be a no-op; it lands together with the guard so both are reviewed as
- * one change.
+ * `register`, `login` and `refresh` are `@Public()`: there is no session yet
+ * when a client calls them. `logout` is deliberately NOT `@Public()` -- it
+ * revokes the caller's own refresh token, so it requires the caller to be
+ * authenticated in the first place (a valid access token in the
+ * `Authorization` header, on top of the refresh token in the body).
+ *
+ * `@UseGuards(ThrottlerGuard)` is applied to the whole controller (not
+ * globally, see `auth.module.ts`) so brute-forcing `login`/`refresh` is rate
+ * limited without throttling the public catalog/projects endpoints.
  */
 @ApiTags('auth')
+@UseGuards(ThrottlerGuard)
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @Public()
   @Post('register')
   @ApiCreatedResponse({ type: AuthResponseDto })
   register(@Body() body: RegisterDto): Promise<AuthResponse> {
     return this.auth.register(body);
   }
 
+  @Public()
   @Post('login')
   @HttpCode(200)
   @ApiOkResponse({ type: AuthResponseDto })
@@ -36,6 +45,7 @@ export class AuthController {
     return this.auth.login(body);
   }
 
+  @Public()
   @Post('refresh')
   @HttpCode(200)
   @ApiOkResponse({ type: AuthTokensDto })

@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ProjectStatus } from '@oneimpact/shared';
+import { Public } from '../../../common/decorators/public.decorator';
 import { ProjectsService } from '../application/projects.service';
 import { ProjectsQueryDto } from './dto/projects-query.dto';
 import { ProjectListDto } from './dto/project.dto';
@@ -12,8 +13,10 @@ import { ProjectWithUpdatesDto } from './dto/project-with-updates.dto';
  * `/v1/projects` and `/v1/projects/:id`. Do NOT prefix the decorators with
  * `/v1`.
  *
- * No `@Public()` here: the `auth` module (and its global `JwtAuthGuard`) is
- * not implemented yet, so there is no guard to opt out of.
+ * `@Public()`: both handlers here are read-only project listings, browsable
+ * before registering or logging in. If a write endpoint (follow, admin
+ * create/update) is added to this controller later, it must NOT inherit this
+ * class-level `@Public()` -- give it its own `@Roles(...)` instead.
  *
  * Thin controller: delegates to `ProjectsService`, never touches
  * `PrismaService` directly. Query validation (`zoneSlug`, `status`) is done
@@ -21,6 +24,7 @@ import { ProjectWithUpdatesDto } from './dto/project-with-updates.dto';
  * short-circuits with 400 before reaching this handler.
  */
 @ApiTags('projects')
+@Public()
 @Controller('projects')
 export class ProjectsController {
   constructor(private readonly projects: ProjectsService) {}
