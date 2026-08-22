@@ -1,51 +1,34 @@
-import type { LoginInput, RegisterInput } from '@oneimpact/shared';
+import { ApiError, createRequestFn } from './http';
+import type { ApiClientOptions } from './http';
+import { createAdminResource } from './resources/admin';
+import { createAuthResource } from './resources/auth';
+import { createDashboardResource } from './resources/dashboard';
+import { createMeResource } from './resources/me';
+import { createNotificationsResource } from './resources/notifications';
+import { createPlansResource } from './resources/plans';
+import { createProjectsResource } from './resources/projects';
+import { createSubscriptionsResource } from './resources/subscriptions';
+import { createZonesResource } from './resources/zones';
 
-export interface ApiClientOptions {
-  baseUrl: string;
-  getToken?: () => Promise<string | null> | string | null;
-}
+export { ApiError };
+export type { ApiClientOptions } from './http';
+export type { AdminMetrics } from './resources/admin';
+export type { ProjectsListParams } from './resources/projects';
 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public body?: unknown,
-  ) {
-    super(message);
-  }
-}
-
-/** Minimal typed fetch wrapper shared by mobile and admin. Endpoints grow with the API. */
-export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
-  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const token = getToken ? await getToken() : null;
-    const res = await fetch(baseUrl + path, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: 'Bearer ' + token } : {}),
-        ...(init.headers ?? {}),
-      },
-    });
-    const body = res.status === 204 ? undefined : await res.json().catch(() => undefined);
-    if (!res.ok) {
-      const message = (body as { message?: string } | undefined)?.message ?? res.statusText;
-      throw new ApiError(res.status, message, body);
-    }
-    return body as T;
-  }
-
+/** Typed fetch wrapper shared by mobile and admin, covering the full REST contract. */
+export function createApiClient(options: ApiClientOptions) {
+  const request = createRequestFn(options);
   return {
     health: () => request<{ status: string }>('/health'),
-    auth: {
-      register: (input: RegisterInput) =>
-        request('/v1/auth/register', { method: 'POST', body: JSON.stringify(input) }),
-      login: (input: LoginInput) =>
-        request('/v1/auth/login', { method: 'POST', body: JSON.stringify(input) }),
-    },
-    plans: { list: () => request('/v1/plans') },
-    zones: { list: () => request('/v1/zones') },
-    projects: { list: () => request('/v1/projects') },
+    auth: createAuthResource(request),
+    me: createMeResource(request),
+    plans: createPlansResource(request),
+    zones: createZonesResource(request),
+    projects: createProjectsResource(request),
+    subscriptions: createSubscriptionsResource(request),
+    dashboard: createDashboardResource(request),
+    notifications: createNotificationsResource(request),
+    admin: createAdminResource(request),
   };
 }
 
