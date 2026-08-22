@@ -22,7 +22,8 @@
     "dev": "nest start --watch",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "prisma db seed",
+    "db:setup": "prisma migrate dev --name init && prisma db seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -88,5 +89,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

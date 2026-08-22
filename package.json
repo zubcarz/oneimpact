@@ -14,7 +14,12 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:setup": "pnpm --filter @oneimpact/api db:setup",
+    "setup": "pnpm install && pnpm db:up && pnpm db:setup",
+    "dev:all": "turbo run dev --filter=@oneimpact/api --filter=@oneimpact/admin"
   },
   "devDependencies": {
     "prettier": "^3.3.3",

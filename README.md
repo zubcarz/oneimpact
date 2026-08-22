@@ -35,7 +35,7 @@ pnpm dev:api      # http://localhost:3000  (Swagger: /docs, health: /health)
 pnpm dev:admin    # http://localhost:3001
 pnpm dev:mobile   # Expo dev server -> scan QR with Expo Go
 ```
-Local database: `docker compose -f apps/api/docker-compose.yml up -d` then `pnpm --filter @oneimpact/api prisma:migrate`.
+Local database: `pnpm db:up` (Docker Postgres 16) then `pnpm db:setup` (migrate + seed). One-shot: `pnpm setup`. Full guide: `docs/local-development.md`.
 
 ## Quality
 ```bash
