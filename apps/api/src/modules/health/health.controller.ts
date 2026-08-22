@@ -14,6 +14,11 @@ export class HealthController {
     } catch {
       database = 'down';
     }
-    return { status: 'ok', service: 'oneimpact-api', database, timestamp: new Date().toISOString() };
+    return {
+      status: 'ok',
+      service: 'oneimpact-api',
+      database,
+      timestamp: new Date().toISOString(),
+    };
   }
 }

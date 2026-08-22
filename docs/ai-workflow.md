@@ -138,3 +138,56 @@ scaffold (`02d45d4`, 5 errores); se confirmo con `git diff main...HEAD` que
 ninguno de esos archivos lo toca esta rama, asi que no bloquea: pide un
 `chore(api)` aparte. Los items 02, 03, 05 y 07 del roadmap ya pueden arrancar
 sobre este contrato.
+
+## 2026-08-22 -- Catalogo, proyectos e infra comun de la API [api-catalog-and-projects]
+
+**Pedido**: ejecutar el plan del item 02 del roadmap
+(`.claude/plans/20260822-api-catalog-and-projects.plan.md`): infraestructura
+comun de la API (errores tipados, pipe zod, event bus), modulo `catalog` y
+modulo `projects` de solo lectura, mas los schemas zod de respuesta en
+`packages/shared`.
+**Herramientas**: `/run-plan-worktree` sobre el worktree
+`.claude/worktrees/api-catalog-and-projects` (rama `feat/api-catalog-and-projects`
+desde `main`), en paralelo con el item 03 en su propio worktree; skill
+`oneimpact-context`; agentes `implementer` (12 invocaciones, una por tarea,
+varias en paralelo cuando los archivos eran disjuntos) y `verifier` (gate por
+fase y `--scope all` al cierre). El `debugger` no hizo falta: ninguna fase
+llego roja al gate.
+**Entrego**: `378cd25` y `6f0337e` (arreglo del baseline, ver ajustes),
+`88dce45` (schemas zod de respuesta en shared y tipos derivados con `z.infer`,
+5 tests), `1b86b63` (`DomainError` + filtro, pipe zod, `@Public()`, `EventBus`
+con la firma `publish(event, tx?)` y los 8 nombres de evento, helpers de e2e,
+espejo de enums Prisma<->shared), `38e768e` (modulo `catalog`: `/v1/plans`,
+`/v1/zones`, `/v1/zones/:slug`), `7e849be` (modulo `projects`: `/v1/projects`
+con filtros y `/v1/projects/:id`, tipos de payload de los 3 eventos que emiten
+06 y 11, e2e de Swagger).
+**Revision**: gate por fase con `quality-check.sh` acotado al scope; lectura
+del diff de cada fase por el orquestador antes de commitear. Cierre
+`--scope all`: 21 pasos en verde (shared/ui-tokens/api-client, api con 23 unit
+y 27 e2e, mobile con bundle expo, admin con Playwright).
+**Ajustes manuales**: (1) El pre-flight salio **rojo y con un falso verde**, los
+dos preexistentes. `apps/api lint` fallaba desde el scaffold (`02d45d4`) porque
+`apps/api/.prettierrc` heredado de Nest omite `printWidth` y los configs de
+prettier no se fusionan: gana el mas cercano, asi que la carpeta se formateaba a
+80 mientras el root fija 100. Se borro el config sobrante. (2) Peor: el paso e2e
+decia `[SKIP] postgres not running` **con Postgres arriba**. Docker Compose deriva
+el nombre de proyecto del directorio, asi que desde un worktree no veia el
+contenedor levantado desde el checkout principal. Sin esto los gates de las
+fases 3 y 4 habrian sido falsos verdes. Se fijo `name: oneimpact` en
+`docker-compose.yml`. (3) El `.env` esta gitignored y no viaja al worktree: se
+copio a mano en el bootstrap. (4) **El e2e de Swagger no probaba lo que decia
+probar**: construia su propia copia del documento, asi que habria seguido verde
+si alguien quitaba `cleanupOpenApiDoc` de `main.ts`. Se extrajo
+`createSwaggerDocument()` a `src/infra/swagger/` y ahora el bootstrap y el spec
+llaman a la misma funcion. (5) Al comprobar esa regresion empiricamente
+aparecio que **la premisa del plan sobre `cleanupOpenApiDoc` era falsa**: con
+nestjs-zod 5.5.0 los DTOs de `createZodDto` se documentan completos con o sin
+esa llamada (documentos identicos campo a campo). La llamada se mantiene, pero
+los comentarios que la describian como load-bearing se corrigieron. Anotado en
+el spec 02 para que el item 12 no repita la premisa.
+**Pendiente**: verificacion visual de `/docs` en el navegador (`pnpm dev:api`,
+`http://localhost:3000/docs`): los 5 endpoints y sus schemas estan asertados por
+`test/swagger.e2e-spec.ts`, pero el render no se miro a ojo. La rama **no esta
+mergeada**: cierra con `/merge-plan api-catalog-and-projects`. Nota para 05: el
+decorador `@Public()` existe pero es inerte, no hay guard global todavia; al
+agregar `JwtAuthGuard` hay que decidir si `plans`/`zones`/`projects` lo llevan.
