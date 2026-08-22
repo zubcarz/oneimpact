@@ -15,6 +15,8 @@ export interface SectionHeaderProps {
   /** Home usa 900 (`black`, default); Zonas/Suscripcion usan 700 (`bold`). */
   weight?: SectionHeaderWeight;
   titleClassName?: string;
+  /** Override adicional para el subtitulo (ej. tamano/color especifico de una seccion). */
+  subtitleClassName?: string;
   className?: string;
 }
 
@@ -26,6 +28,7 @@ export function SectionHeader({
   tone = 'light',
   weight = 'black',
   titleClassName,
+  subtitleClassName,
   className,
 }: SectionHeaderProps) {
   const isCenter = align === 'center';
@@ -50,6 +53,7 @@ export function SectionHeader({
             'text-base max-w-md',
             isDark ? 'text-white/70' : 'text-gray-500',
             isCenter && 'text-center',
+            subtitleClassName,
           )}
         >
           {subtitle}

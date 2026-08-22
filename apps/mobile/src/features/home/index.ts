@@ -9,3 +9,7 @@ export { TestimonialAvatars } from './TestimonialAvatars';
 export type { TestimonialAvatarsProps } from './TestimonialAvatars';
 
 export { Testimonials } from './Testimonials';
+
+export { AlliesSection } from './AlliesSection';
+
+export { StatsBanner } from './StatsBanner';
