@@ -19,6 +19,8 @@ export const colors = {
   gray500: '#6a7282',
   gray400: '#99a1af',
   gray200: '#e5e7eb',
+  /** Topographic decoration lines behind the Zones hero (vault svg/zonas-hero-lineas.svg). */
+  topoLine: '#5a7045',
   white: '#ffffff',
   black: '#000000',
 } as const;
@@ -36,4 +38,5 @@ export const tailwindColors = {
   slate: colors.slate,
   cream: { DEFAULT: colors.cream, warm: colors.creamWarm, card: colors.creamCard },
   highlight: colors.highlight,
+  'topo-line': colors.topoLine,
 };
