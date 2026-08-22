@@ -23,4 +23,6 @@ export const overlay = {
   white80: 'rgba(255,255,255,0.8)',
   white90: 'rgba(255,255,255,0.9)',
   transparent: 'transparent',
+  /** Sombra del anillo activo en AvatarSelector/TestimonialAvatars (`componentes.md`). */
+  highlightRing: 'rgba(250,204,21,0.5)',
 } as const;

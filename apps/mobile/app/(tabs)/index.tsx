@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
-import { HeroSection, VideoSection } from '@/features/home';
+import { HeroSection, Testimonials, VideoSection, ZonesCarousel } from '@/features/home';
 
 export default function IndexScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -11,6 +11,8 @@ export default function IndexScreen() {
       <FullScreenMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
       <HeroSection />
       <VideoSection />
+      <ZonesCarousel />
+      <Testimonials />
       <Footer />
     </Screen>
   );
