@@ -129,8 +129,8 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 | 03  | mobile-zones-screens              | hecho     | `f458a55..ec6f416`, mergeado a main en `d01d14b`               |
 | 04  | mobile-subscription-screen        | hecho     | `bdc84ae..11443dc`, mergeado a main en `4817435`               |
 | 05  | api-auth-and-roles                | hecho     | `d408426..80e57ad`, mergeado a main en `07f5d04`               |
-| 06  | api-payments-subscriptions-events | hecho     | `6a24006..90e6c16` en `feat/api-payments-subscriptions-events` |
-| 07  | mobile-data-layer-and-auth        | pendiente |                                                                |
+| 06  | api-payments-subscriptions-events | hecho     | `6a24006..0573655`, mergeado a main en `d0fab7b`               |
+| 07  | mobile-data-layer-and-auth        | parcial   | `8d7c0d1..74521aa`, mergeado a main en `2e45527`               |
 | 08  | mobile-projects-and-about         | pendiente |                                                                |
 | 09  | mobile-register-payment-welcome   | pendiente |                                                                |
 | 10  | mobile-dashboard-and-profile      | pendiente |                                                                |
@@ -139,3 +139,12 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 | 13  | admin-metrics-users-subscriptions | pendiente |                                                                |
 | 14  | deploy-and-ci                     | pendiente |                                                                |
 | 15  | release-readme-gif                | pendiente |                                                                |
+
+**Sobre el `parcial` del 07**: de las 6 fases de
+`.claude/plans/20260822-mobile-data-layer-and-auth.plan.md` solo entraron a `main`
+la 1 (alinear `api-client`) y la 2 (cliente, query keys, token-store y hooks).
+Siguen pendientes la 3 (MSW sobre el seed compartido), la 4 (`AuthProvider`,
+guards y grupos de rutas), la 5 (Zonas consumiendo hooks) y la 6 (cierre).
+Consecuencia para los items que dependen de 07: no hay `msw` en
+`apps/mobile/package.json` ni `AuthProvider`, asi que cualquier criterio de
+aceptacion redactado sobre MSW o sesion hay que releerlo contra la API real.
