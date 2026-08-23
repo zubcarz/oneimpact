@@ -9,7 +9,9 @@ import { DomainError } from '../errors/domain-error';
  *
  * Response body is `{ statusCode, code, message }`. `message` is what
  * `packages/api-client/src/http.ts` reads to build `ApiError` on the client
- * side, so the field name is part of the contract and must not change.
+ * side, so the field name is part of the contract and must not change. When
+ * the `DomainError` carries `details`, it is added as a fourth, optional
+ * `details` key -- purely additive, never replacing `message`.
  */
 @Catch(DomainError)
 export class DomainErrorFilter implements ExceptionFilter {
@@ -19,6 +21,7 @@ export class DomainErrorFilter implements ExceptionFilter {
       statusCode: exception.status,
       code: exception.code,
       message: exception.message,
+      ...(exception.details ? { details: exception.details } : {}),
     });
   }
 }

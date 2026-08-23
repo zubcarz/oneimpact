@@ -7,7 +7,9 @@ import { PrismaModule } from './infra/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -17,11 +19,12 @@ import { UsersModule } from './modules/users/users.module';
     PrismaModule,
     EventsModule,
     HealthModule,
-    // Domain modules (added incrementally): SubscriptionsModule,
-    // PaymentsModule, ImpactModule, NotificationsModule
+    // Domain modules (added incrementally): ImpactModule, NotificationsModule
     AuthModule,
     CatalogModule,
+    PaymentsModule,
     ProjectsModule,
+    SubscriptionsModule,
     UsersModule,
   ],
 })

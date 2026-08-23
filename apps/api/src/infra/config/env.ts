@@ -10,6 +10,11 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:3001'),
   AUTH_THROTTLE_LIMIT: z.coerce.number().default(10),
   AUTH_THROTTLE_TTL_MS: z.coerce.number().default(60000),
+  // Artificial latency of `PaymentsService.simulate` on the approved path
+  // (`backend-nest.md`, "Pago simulado"). Optional: defaults to ~800 ms in
+  // development/production. Set to 0 in test envs (see `.env.example`) so
+  // unit and e2e suites do not pay real wall-clock time for every payment.
+  PAYMENT_SIMULATION_DELAY_MS: z.coerce.number().int().min(0).default(800),
 });
 export type Env = z.infer<typeof envSchema>;
 
