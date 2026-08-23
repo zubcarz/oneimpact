@@ -1,17 +1,17 @@
 # Local development
 
-> Snapshot of what already runs today (and the port 3000 clash on this machine):
+> Snapshot of what already runs today, plus the known issues of this machine:
 > [local-run-status.md](local-run-status.md).
 
 Everything runs on your machine: Postgres in Docker, API + admin as Node processes, mobile through Expo Go on a physical phone (or an emulator).
 
 ```
-┌─────────────┐  LAN (192.168.x.x:3000)  ┌──────────────┐      ┌──────────────────┐
-│ Expo Go     │ ───────────────────────▶ │ API :3000    │ ───▶ │ Postgres :5432   │
+┌─────────────┐  LAN (192.168.x.x:5000)  ┌──────────────┐      ┌──────────────────┐
+│ Expo Go     │ ───────────────────────▶ │ API :5000    │ ───▶ │ Postgres :5432   │
 │ (phone)     │                          │ NestJS       │      │ docker compose   │
 └─────────────┘                          └──────────────┘      └──────────────────┘
-┌─────────────┐  localhost:3000                  ▲
-│ Admin :3001 │ ─────────────────────────────────┘
+┌─────────────┐  localhost:5000                  ▲
+│ Admin :5001 │ ─────────────────────────────────┘
 │ Next.js     │
 └─────────────┘
 ```
@@ -40,19 +40,19 @@ Seed users: `admin@oneimpact.org / Admin123!` (ADMIN) and `ana@oneimpact.org / U
 ## 2. Run
 | Command | What | URL |
 |---|---|---|
-| `pnpm dev:api` | NestJS with watch | http://localhost:3000/health · http://localhost:3000/docs |
-| `pnpm dev:admin` | Next.js | http://localhost:3001 |
+| `pnpm dev:api` | NestJS with watch | http://localhost:5000/health · http://localhost:5000/docs |
+| `pnpm dev:admin` | Next.js | http://localhost:5001 |
 | `pnpm dev:all` | API + admin via Turbo in one terminal | |
 | `pnpm dev:mobile` | Expo dev server (Metro :8081) → scan QR with Expo Go | |
 
 ### Mobile ↔ API on a physical phone
 `localhost` on the phone is the phone. Set your computer's LAN IP in `apps/mobile/.env`:
 ```
-EXPO_PUBLIC_API_URL=http://192.168.0.3:3000
+EXPO_PUBLIC_API_URL=http://192.168.0.3:5000
 ```
 (`ipconfig` → IPv4 of your Wi‑Fi adapter). Add that origin to `CORS_ORIGINS` in `apps/api/.env` if you call the API from Expo web. Restart Metro after changing `.env` (`EXPO_PUBLIC_*` are inlined at bundle time).
 
-Emulators: Android emulator reaches the host at `http://10.0.2.2:3000`; iOS simulator can use `http://localhost:3000`.
+Emulators: Android emulator reaches the host at `http://10.0.2.2:5000`; iOS simulator can use `http://localhost:5000`.
 
 If the phone cannot connect to Metro (corporate Wi‑Fi / AP isolation), run `npx expo start --tunnel` inside `apps/mobile`.
 
@@ -70,14 +70,14 @@ Prisma reads `DATABASE_URL` (runtime) and `DIRECT_URL` (migrations). Locally bot
 ```bash
 pnpm typecheck && pnpm lint && pnpm test
 pnpm --filter @oneimpact/api test:e2e          # needs Postgres up
-pnpm --filter @oneimpact/admin test:e2e        # Playwright, starts Next on 3001 automatically
+pnpm --filter @oneimpact/admin test:e2e        # Playwright, starts Next on 5001 automatically
 ```
 
 ## 5. Ports
 | Service | Port |
 |---|---|
-| API | 3000 |
-| Admin | 3001 |
+| API | 5000 |
+| Admin | 5001 |
 | Metro (Expo) | 8081 |
 | Postgres | 5432 |
 | Prisma Studio | 5555 |

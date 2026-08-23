@@ -68,7 +68,7 @@ Particularidades:
 - `expo export` en el worktree es valido; `expo start` no (Metro del principal
   ya usa 8081).
 - Playwright en el worktree necesita puerto libre: usa `PLAYWRIGHT_BASE_URL` y
-  levanta el admin en 3002 si el principal ocupa 3001.
+  levanta el admin en 5002 si el principal ocupa 5001.
 
 ## Paso 3 -- Cierre
 

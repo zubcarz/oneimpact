@@ -391,7 +391,7 @@ datos reales de Postgres, con el patron de modulo completo.
 - `bash scripts/dev/quality-check.sh --scope api --only e2e` (Postgres arriba;
   el paso debe decir `[OK]`, no `[SKIP]`)
 - Casos negativos: el 404 tipado de arriba.
-- Pendiente manual: `pnpm dev:api` y mirar `http://localhost:3000/docs` --
+- Pendiente manual: `pnpm dev:api` y mirar `http://localhost:5000/docs` --
   que el tag `catalog` liste los 3 endpoints con su schema de respuesta.
 
 **Riesgos**: el mapper es codigo a mano; si se olvida un campo, el typecheck lo

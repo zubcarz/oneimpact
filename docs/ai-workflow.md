@@ -8,8 +8,8 @@ How Claude Code was used in this project: prompts, what was reviewed, what was a
 ## 2026-08-22 -- Tooling de Claude Code para el monorepo [claude-tooling]
 
 **Pedido**: tomar como referencia la estructura `.claude/` y `.wip/` de dos
-proyectos previos (anzi core-api, Minca-AI-tool-GS) y crear la version propia de
-One Impact: reglas, comandos, agentes y orquestacion multiagente.
+repos previos propios y crear la version propia de One Impact: reglas,
+comandos, agentes y orquestacion multiagente.
 **Herramientas**: Claude Code (sesion interactiva), lectura de los repos de
 referencia, Write/Bash.
 **Entrego**: `CLAUDE.md` raiz y por app; `.claude/rules/` (7 reglas);
@@ -186,7 +186,7 @@ esa llamada (documentos identicos campo a campo). La llamada se mantiene, pero
 los comentarios que la describian como load-bearing se corrigieron. Anotado en
 el spec 02 para que el item 12 no repita la premisa.
 **Pendiente**: verificacion visual de `/docs` en el navegador (`pnpm dev:api`,
-`http://localhost:3000/docs`): los 5 endpoints y sus schemas estan asertados por
+`http://localhost:5000/docs`): los 5 endpoints y sus schemas estan asertados por
 `test/swagger.e2e-spec.ts`, pero el render no se miro a ojo. La rama **no esta
 mergeada**: cierra con `/merge-plan api-catalog-and-projects`. Nota para 05: el
 decorador `@Public()` existe pero es inerte, no hay guard global todavia; al

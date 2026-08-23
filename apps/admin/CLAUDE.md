@@ -1,6 +1,6 @@
 # apps/admin -- AI instructions
 
-Next.js 16 App Router + Tailwind 4 + shadcn/ui + Playwright, port 3001.
+Next.js 16 App Router + Tailwind 4 + shadcn/ui + Playwright, port 5001.
 Follow root `CLAUDE.md` and `.claude/rules/40-admin-conventions.md`.
 
 - Same visual system as the mobile app: tokens in `src/app/globals.css` (`@theme`),

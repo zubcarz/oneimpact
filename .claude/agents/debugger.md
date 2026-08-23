@@ -46,7 +46,7 @@ modulos de la API, sin PAN en el servidor, sin tokens en localStorage.
   espejo en `shared`. Si falta `prisma generate`, reportalo (no lo corras vos).
 - **e2e de api `ECONNREFUSED 5432`**: Postgres apagado. `ERROR` de entorno, no
   de codigo: escala.
-- **Playwright timeout en login**: casi siempre el admin no levanto en 3001 o la
+- **Playwright timeout en login**: casi siempre el admin no levanto en 5001 o la
   API no tiene seed. Entorno: escala.
 
 ## Limite duro: 3 intentos

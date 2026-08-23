@@ -19,33 +19,37 @@ pnpm --filter @oneimpact/api db:setup   # migrate + seed (idempotente)
 Luego, una terminal por proceso:
 
 ```bash
-# API  -- ver el aviso del puerto 3000 mas abajo
-cd apps/api && PORT=3010 pnpm start:dev
+# API en :5000
+pnpm dev:api
 
 # Mobile (Metro) -- desde la raiz, asi salen el QR y los atajos a/w/r
 pnpm dev:mobile
 ```
 
-El admin (`pnpm dev:admin`, :3001) todavia no aporta nada: sus paginas son
+El admin (`pnpm dev:admin`, :5001) todavia no aporta nada: sus paginas son
 placeholders hasta el item 11.
 
-## 2. Aviso: el puerto 3000 esta ocupado en esta maquina
+## 2. Puertos
 
-Otro proyecto local (dev server de Vite, "MincaAI") escucha en `0.0.0.0:3000`.
-Windows deja que Nest tambien haga bind, pero entonces **IPv4 va al otro proyecto
-e IPv6 a la API de One Impact**: `curl http://127.0.0.1:3000/health` devuelve HTML
-en vez de JSON. Sintoma tipico de un "la API responde cosas raras".
+| Proceso | Puerto |
+|---|---|
+| API (NestJS) | 5000 |
+| Admin (Next.js) | 5001 |
+| Metro (Expo) | 8081 |
+| Postgres (docker) | 5432 |
 
-Dos salidas:
+El rango 5000+ se eligio a proposito: los puertos 3000/3001/4000 son el default
+de casi cualquier dev server y en esta maquina conviven otros proyectos que los
+usan. Si dos dev servers hacen bind del mismo puerto, Windows lo permite y el
+resultado es peor que un error: **IPv4 va a un proceso e IPv6 al otro**, asi que
+`curl http://127.0.0.1:5000/health` puede devolver HTML en vez de JSON. Sintoma
+tipico de "la API responde cosas raras".
 
-- Liberar el 3000 (parar el otro dev server) y arrancar normal con `pnpm dev:api`.
-- Arrancar en otro puerto sin tocar `.env`: `PORT=3010 pnpm start:dev` desde
-  `apps/api`. La variable de entorno gana sobre el `.env` (dotenv no sobrescribe
-  lo que ya existe en `process.env`).
-
-Cuando llegue el item 07 (mobile data layer) hay que decidirlo de verdad:
-`apps/mobile/.env` apunta a `EXPO_PUBLIC_API_URL=http://localhost:3000`, que hoy
-es el otro proyecto. O se libera el 3000, o se cambia esa variable al puerto real.
+Para arrancar en otro puerto sin tocar `.env`: `PORT=5010 pnpm start:dev` desde
+`apps/api` -- la variable de entorno gana sobre el `.env` (dotenv no sobrescribe
+lo que ya existe en `process.env`). Si se cambia, hay que alinear
+`EXPO_PUBLIC_API_URL` en `apps/mobile/.env` y `NEXT_PUBLIC_API_URL` en
+`apps/admin/.env`.
 
 ## 3. Abrir la app
 
@@ -53,7 +57,7 @@ es el otro proyecto. O se libera el 3000, o se cambia esa variable al puerto rea
 |---|---|
 | Navegador | http://localhost:8081 (Metro sirve el bundle web) |
 | Expo Go (movil) | escanear el QR de la terminal, o "Enter URL manually" -> `exp://<IP-LAN>:8081` |
-| Emulador Android | tecla `a` en la terminal de Metro (host de la API: `http://10.0.2.2:<puerto>`) |
+| Emulador Android | tecla `a` en la terminal de Metro (host de la API: `http://10.0.2.2:5000`) |
 | Simulador iOS | tecla `i` |
 
 La IP LAN sale de `ipconfig` (IPv4 del adaptador Wi-Fi). En esta maquina es
@@ -74,7 +78,7 @@ para eso hay que correrlo en una terminal propia.
 
 `app/(auth)/`, `app/(app)/` y `app/projects/` estan vacias: son los items 08, 09 y 10.
 
-**API** (con el seed cargado), en `http://localhost:<puerto>`:
+**API** (con el seed cargado), en `http://localhost:5000`:
 
 - `GET /health`, Swagger en `/docs`
 - `GET /v1/plans`, `GET /v1/zones`, `GET /v1/zones/:slug`
@@ -88,7 +92,7 @@ Usuarios del seed: `admin@oneimpact.org / Admin123!` (ADMIN) y
 ## 5. Comprobacion rapida por curl
 
 ```bash
-P=3010
+P=5000
 curl -s http://127.0.0.1:$P/health
 curl -s http://127.0.0.1:$P/v1/plans
 
@@ -110,7 +114,7 @@ en el volumen `pgdata`; `docker compose down -v` los borra).
 Si un proceso quedo huerfano en segundo plano:
 
 ```bash
-netstat -ano | grep LISTENING | grep -E ":(3010|8081) "   # saca el PID
+netstat -ano | grep LISTENING | grep -E ":(5000|5001|8081) "   # saca el PID
 taskkill //PID <pid> //F
 ```
 
@@ -174,6 +178,13 @@ de Metro se cae al intentar vigilar uno que ya no existe.
 Arreglo aplicado: `config.watchFolders` ahora apunta solo a
 `node_modules/` y `packages/` del workspace en vez de a la raiz entera
 (`apps/mobile` se vigila por defecto). Los worktrees dejan de estar en el radar.
+
+Queda un caso que el config no puede tapar: un `pnpm install` **en la raiz**
+mientras Metro corre. pnpm escribe directorios `<pkg>_tmp_<pid>` dentro de
+`node_modules` y los renombra; el watcher de fallback de Metro (Windows sin
+watchman) intenta vigilar uno que ya desaparecio y muere igual. Regla practica:
+no instalar dependencias con Metro levantado, y si hace falta, reiniciar Metro
+despues del install.
 
 ## 8. Estado de verificacion
 

@@ -30,7 +30,7 @@ e2e/                     Playwright
   API; el token nunca toca `localStorage`.
 - Subida de imagenes: pedir signed URL a la API y subir directo a Supabase
   Storage. El admin no proxea bytes.
-- Puerto 3001 (`next dev -p 3001`).
+- Puerto 5001 (`next dev -p 5001`).
 
 ## Playwright
 

@@ -6,5 +6,5 @@ COPY packages ./packages
 COPY apps/api ./apps/api
 RUN pnpm install --frozen-lockfile --filter @oneimpact/api...
 RUN pnpm --filter @oneimpact/api build
-EXPOSE 3000
+EXPOSE 5000
 CMD ["node", "apps/api/dist/main.js"]

@@ -59,5 +59,5 @@ Si una app necesita algo de otra app, eso va a un package o al contrato REST.
 
 ## Entorno local
 
-`docs/local-development.md` manda. Postgres en Docker (`pnpm db:up`), API :3000,
-admin :3001, Metro :8081. Para Expo Go fisico, `EXPO_PUBLIC_API_URL` con IP LAN.
+`docs/local-development.md` manda. Postgres en Docker (`pnpm db:up`), API :5000,
+admin :5001, Metro :8081. Para Expo Go fisico, `EXPO_PUBLIC_API_URL` con IP LAN.

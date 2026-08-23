@@ -48,7 +48,7 @@ Reglas:
 bash scripts/dev/quality-check.sh --scope admin --only typecheck,lint,unit
 pnpm --filter @oneimpact/admin test:e2e -- e2e/<page>.spec.ts
 ```
-(Playwright necesita API con seed en :3000 y admin en :3001.)
+(Playwright necesita API con seed en :5000 y admin en :5001.)
 
 ## Paso 4 -- Reportar
 
