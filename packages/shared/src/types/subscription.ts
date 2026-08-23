@@ -1,57 +1,20 @@
+import type { z } from 'zod';
 import type {
-  Billing,
-  NotificationType,
-  PaymentStatus,
-  SubscriptionStatus,
-  PlanId,
-} from '../enums';
-import type { Plan } from '../plans';
-import type { CardBrand } from '../schemas/payment';
-import type { ProjectUpdate } from './catalog';
+  subscriptionSchema,
+  paymentSchema,
+  dashboardSummarySchema,
+  notificationSchema,
+} from '../schemas/payment';
 
-export interface Subscription {
-  id: string;
-  userId: string;
-  planId: PlanId;
-  billing: Billing;
-  status: SubscriptionStatus;
-  startedAt: string;
-  canceledAt?: string;
-}
+export type Subscription = z.infer<typeof subscriptionSchema>;
 
 /**
  * Never a field with the full card number (PAN). The server and clients only
  * ever see brand + last4 for a simulated payment.
  */
-export interface Payment {
-  id: string;
-  subscriptionId: string;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
-  cardBrand: CardBrand;
-  cardLast4: string;
-  simulated: boolean;
-  createdAt: string;
-}
+export type Payment = z.infer<typeof paymentSchema>;
 
-export interface DashboardSummary {
-  plan: Plan | null;
-  billing: Billing | null;
-  status: SubscriptionStatus | null;
-  activeMonths: number;
-  followedProjects: number;
-  latestUpdate?: ProjectUpdate;
-}
+export type DashboardSummary = z.infer<typeof dashboardSummarySchema>;
 
 /** Named `NotificationItem` to avoid colliding with the DOM `Notification` type. */
-export interface NotificationItem {
-  id: string;
-  userId: string;
-  type: NotificationType;
-  title: string;
-  body: string;
-  refId?: string;
-  readAt?: string;
-  createdAt: string;
-}
+export type NotificationItem = z.infer<typeof notificationSchema>;

@@ -65,6 +65,7 @@ model User {
   updatedAt           DateTime @default(now()) @updatedAt
 
   subscriptions   Subscription[]
+  payments        Payment[]
   follows         ProjectFollow[]
   journeyPoints   JourneyPoint[]
   notifications   Notification[]
@@ -117,10 +118,20 @@ model Subscription {
 }
 
 model Payment {
-  id             String        @id @default(cuid())
-  subscriptionId String
-  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
-  amount         Int // amount in cents
+  id String @id @default(cuid())
+
+  // Optional on purpose: the payment is simulated BEFORE the subscription
+  // exists, so a declined attempt has no subscription to hang from. Keeping
+  // this required would make it impossible to persist a FAILED payment at all.
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  // Who attempted the payment. Without it a declined attempt would be an
+  // orphan row: unattributable, and useless for the admin metrics of item 12.
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  amount         Int           // amount in cents
   currency       String        @default("USD")
   status         PaymentStatus
   cardBrand      String
@@ -167,7 +178,10 @@ model Project {
 }
 
 model ProjectUpdate {
-  id          String   @id // stable seed id, e.g. "<slug>-update-1", not a cuid default
+  // The seed still passes its own stable ids explicitly (e.g. "<slug>-update-1")
+  // so it stays idempotent; the default only kicks in for updates published
+  // through POST /v1/projects/:id/updates, which has no natural id to use.
+  id          String   @id @default(cuid())
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title       String
@@ -194,7 +208,7 @@ model ProjectFollow {
 model JourneyPoint {
   id        String        @id @default(cuid())
   userId    String
-  user      User          @relation(fields: [userId], references: [id])
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   month     String // format YYYY-MM
   source    JourneySource
   refId     String?
@@ -207,7 +221,7 @@ model JourneyPoint {
 model Notification {
   id        String           @id @default(cuid())
   userId    String
-  user      User             @relation(fields: [userId], references: [id])
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   title     String
   body      String

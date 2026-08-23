@@ -12,23 +12,23 @@ resultante va a `.claude/plans/` y se ejecuta con `/run-plan-*`.
 
 ## Items
 
-| # | Item | Track | Depende de | Fase | Estimado |
-|---|---|---|---|---|---|
-| 01 | shared-contract-and-seed | shared + api | -- | 1 | 1.5 h |
-| 02 | api-catalog-and-projects | api | 01 | 1 | 2 h |
-| 03 | mobile-zones-screens | mobile | 01 (tipos) | 1 | 2.5 h |
-| 04 | mobile-subscription-screen | mobile | -- (shared ya tiene planes) | 1 | 2 h |
-| 05 | api-auth-and-roles | api | 01 | 1 | 2.5 h |
-| 06 | api-payments-subscriptions-events | api | 05 | 1 | 3 h |
-| 07 | mobile-data-layer-and-auth | mobile | 01, contrato de 02/05 (MSW mientras) | 1 | 2.5 h |
-| 08 | mobile-projects-and-about | mobile | 07 | 1 | 2.5 h |
-| 09 | mobile-register-payment-welcome | mobile | 07, contrato de 06 (MSW mientras) | 1 | 3 h |
-| 10 | mobile-dashboard-and-profile | mobile | 06, 09 | 1 (si hay tiempo) / 2 | 2.5 h |
-| 11 | admin-auth-and-projects | admin | 02, 05 | 1 (minimo: login + tabla) / 2 | 3 h |
-| 12 | api-dashboard-metrics-and-outbox | api | 06 | 2 | 3 h |
-| 13 | admin-metrics-users-subscriptions | admin | 12 | 2 | 3 h |
-| 14 | deploy-and-ci | infra | 02, 05 (API desplegable) | 1 (API+admin) | 2 h |
-| 15 | release-readme-gif | docs | todo lo de Fase 1 | 1 | 2 h |
+| #   | Item                              | Track        | Depende de                           | Fase                          | Estimado |
+| --- | --------------------------------- | ------------ | ------------------------------------ | ----------------------------- | -------- |
+| 01  | shared-contract-and-seed          | shared + api | --                                   | 1                             | 1.5 h    |
+| 02  | api-catalog-and-projects          | api          | 01                                   | 1                             | 2 h      |
+| 03  | mobile-zones-screens              | mobile       | 01 (tipos)                           | 1                             | 2.5 h    |
+| 04  | mobile-subscription-screen        | mobile       | -- (shared ya tiene planes)          | 1                             | 2 h      |
+| 05  | api-auth-and-roles                | api          | 01                                   | 1                             | 2.5 h    |
+| 06  | api-payments-subscriptions-events | api          | 05                                   | 1                             | 3 h      |
+| 07  | mobile-data-layer-and-auth        | mobile       | 01, contrato de 02/05 (MSW mientras) | 1                             | 2.5 h    |
+| 08  | mobile-projects-and-about         | mobile       | 07                                   | 1                             | 2.5 h    |
+| 09  | mobile-register-payment-welcome   | mobile       | 07, contrato de 06 (MSW mientras)    | 1                             | 3 h      |
+| 10  | mobile-dashboard-and-profile      | mobile       | 06, 09                               | 1 (si hay tiempo) / 2         | 2.5 h    |
+| 11  | admin-auth-and-projects           | admin        | 02, 05                               | 1 (minimo: login + tabla) / 2 | 3 h      |
+| 12  | api-dashboard-metrics-and-outbox  | api          | 06                                   | 2                             | 3 h      |
+| 13  | admin-metrics-users-subscriptions | admin        | 12                                   | 2                             | 3 h      |
+| 14  | deploy-and-ci                     | infra        | 02, 05 (API desplegable)             | 1 (API+admin)                 | 2 h      |
+| 15  | release-readme-gif                | docs         | todo lo de Fase 1                    | 1                             | 2 h      |
 
 Total Fase 1 estricto (01-09, 11 minimo, 14, 15): ~27 h de trabajo asistido.
 No cabe en serie antes del lunes: **el paralelismo no es opcional**.
@@ -81,16 +81,16 @@ Dos lanes solo corren a la vez si sus write-scopes son disjuntos. Reglas duras:
 - Integracion: `/merge-plan` de cada lane a `main` **en el orden de la tabla**
   dentro de la ola; la siguiente ola arranca desde `main` actualizado.
 
-| Ola | Cuando | Lanes en paralelo | Gate de salida |
-|---|---|---|---|
-| 0 | Sab 22, ya | 01 (solo) | seed + tipos en `main`; `quality-check --scope shared,api` verde |
-| 1 | Sab 22 noche | **02** (api) + **03** (mobile zones) + **04** (mobile subscription) | 3 merges; app publica completa salvo projects/about; `GET /plans|zones|projects` reales |
-| 2 | Dom 23 manana | **05** (api auth) + **07** (mobile data layer, contra MSW) | auth real; mobile consume API o MSW por flag |
-| 3 | Dom 23 mediodia | **06** (api payments/subs/events) + **08** (mobile projects/about) + **11** (admin login + tabla projects) | flujo de negocio completo en API; app publica 100 % |
-| 4 | Dom 23 tarde | **09** (mobile register/payment/welcome, contra MSW y luego API) + **14** (deploy API/admin) | registro -> pago simulado -> bienvenida funcionando; API en Supabase + DO/Render |
-| 5 | Dom 23 noche (si hay tiempo) | **10** (mobile dashboard/profile) + **12** (api metrics/outbox) | zona logueada |
-| 6 | Lun 24 manana | **15** (release) -- secuencial, sin lanes | GIF, README, ai-workflow, push, correo antes de 18:00 |
-| 7 | Fase 2 (semana 25-31) | 12 (si no entro) + 13 | admin completo |
+| Ola | Cuando                       | Lanes en paralelo                                                                                          | Gate de salida                                                                   |
+| --- | ---------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 0   | Sab 22, ya                   | 01 (solo)                                                                                                  | seed + tipos en `main`; `quality-check --scope shared,api` verde                 |
+| 1   | Sab 22 noche                 | **02** (api) + **03** (mobile zones) + **04** (mobile subscription)                                        | 3 merges; app publica completa salvo projects/about; `GET /plans                 | zones | projects` reales |
+| 2   | Dom 23 manana                | **05** (api auth) + **07** (mobile data layer, contra MSW)                                                 | auth real; mobile consume API o MSW por flag                                     |
+| 3   | Dom 23 mediodia              | **06** (api payments/subs/events) + **08** (mobile projects/about) + **11** (admin login + tabla projects) | flujo de negocio completo en API; app publica 100 %                              |
+| 4   | Dom 23 tarde                 | **09** (mobile register/payment/welcome, contra MSW y luego API) + **14** (deploy API/admin)               | registro -> pago simulado -> bienvenida funcionando; API en Supabase + DO/Render |
+| 5   | Dom 23 noche (si hay tiempo) | **10** (mobile dashboard/profile) + **12** (api metrics/outbox)                                            | zona logueada                                                                    |
+| 6   | Lun 24 manana                | **15** (release) -- secuencial, sin lanes                                                                  | GIF, README, ai-workflow, push, correo antes de 18:00                            |
+| 7   | Fase 2 (semana 25-31)        | 12 (si no entro) + 13                                                                                      | admin completo                                                                   |
 
 ### Corte de seguridad (domingo 20:00)
 
@@ -121,21 +121,21 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 
 ## Estado
 
-| # | Item | Estado | Rama / commits |
-|---|---|---|---|
-| 00 | mobile-foundation-and-home | hecho | `03bf7dd..48c6788` en main |
-| 01 | shared-contract-and-seed | hecho | `9dd3061..104e58c` en main |
-| 02 | api-catalog-and-projects | hecho | `378cd25..0d8ac58`, mergeado a main en `fc142c9` |
-| 03 | mobile-zones-screens | hecho | `f458a55..ec6f416`, mergeado a main en `d01d14b` |
-| 04 | mobile-subscription-screen | hecho | `bdc84ae..11443dc`, mergeado a main en `4817435` |
-| 05 | api-auth-and-roles | hecho | `d408426..80e57ad`, mergeado a main en `07f5d04` |
-| 06 | api-payments-subscriptions-events | pendiente | |
-| 07 | mobile-data-layer-and-auth | pendiente | |
-| 08 | mobile-projects-and-about | pendiente | |
-| 09 | mobile-register-payment-welcome | pendiente | |
-| 10 | mobile-dashboard-and-profile | pendiente | |
-| 11 | admin-auth-and-projects | pendiente | |
-| 12 | api-dashboard-metrics-and-outbox | pendiente | |
-| 13 | admin-metrics-users-subscriptions | pendiente | |
-| 14 | deploy-and-ci | pendiente | |
-| 15 | release-readme-gif | pendiente | |
+| #   | Item                              | Estado    | Rama / commits                                                 |
+| --- | --------------------------------- | --------- | -------------------------------------------------------------- |
+| 00  | mobile-foundation-and-home        | hecho     | `03bf7dd..48c6788` en main                                     |
+| 01  | shared-contract-and-seed          | hecho     | `9dd3061..104e58c` en main                                     |
+| 02  | api-catalog-and-projects          | hecho     | `378cd25..0d8ac58`, mergeado a main en `fc142c9`               |
+| 03  | mobile-zones-screens              | hecho     | `f458a55..ec6f416`, mergeado a main en `d01d14b`               |
+| 04  | mobile-subscription-screen        | hecho     | `bdc84ae..11443dc`, mergeado a main en `4817435`               |
+| 05  | api-auth-and-roles                | hecho     | `d408426..80e57ad`, mergeado a main en `07f5d04`               |
+| 06  | api-payments-subscriptions-events | hecho     | `6a24006..90e6c16` en `feat/api-payments-subscriptions-events` |
+| 07  | mobile-data-layer-and-auth        | pendiente |                                                                |
+| 08  | mobile-projects-and-about         | pendiente |                                                                |
+| 09  | mobile-register-payment-welcome   | pendiente |                                                                |
+| 10  | mobile-dashboard-and-profile      | pendiente |                                                                |
+| 11  | admin-auth-and-projects           | pendiente |                                                                |
+| 12  | api-dashboard-metrics-and-outbox  | pendiente |                                                                |
+| 13  | admin-metrics-users-subscriptions | pendiente |                                                                |
+| 14  | deploy-and-ci                     | pendiente |                                                                |
+| 15  | release-readme-gif                | pendiente |                                                                |
