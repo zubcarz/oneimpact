@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '../../../common/decorators/public.decorator';
 import { CatalogService } from '../application/catalog.service';
 import { PlanListDto } from './dto/plan.dto';
 
@@ -10,10 +11,11 @@ import { PlanListDto } from './dto/plan.dto';
  * already includes it and is meant for clients/e2e assertions, not for this
  * decorator.
  *
- * No `@Public()` here: the `auth` module (and its global `JwtAuthGuard`) is
- * not implemented yet, so there is no guard to opt out of.
+ * `@Public()`: plan pricing is public marketing content, readable before
+ * registering or logging in.
  */
 @ApiTags('catalog')
+@Public()
 @Controller('plans')
 export class PlansController {
   constructor(private readonly catalog: CatalogService) {}

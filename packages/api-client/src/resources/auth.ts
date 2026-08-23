@@ -19,5 +19,9 @@ export function createAuthResource(request: RequestFn) {
         method: 'POST',
         body: JSON.stringify(input),
       }),
+    logout: () =>
+      request<void>(API_PATHS.auth.logout, {
+        method: 'POST',
+      }),
   };
 }

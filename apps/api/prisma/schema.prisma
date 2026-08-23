@@ -70,6 +70,22 @@ model User {
   notifications   Notification[]
   createdProjects Project[]       @relation("ProjectCreatedBy")
   authoredUpdates ProjectUpdate[] @relation("ProjectUpdateAuthor")
+  refreshTokens   RefreshToken[]
+}
+
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String // argon2 hash of the token: a table dump does not allow renewing a session
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String? // rotation chain: allows detecting reuse of an already rotated token
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Plan {

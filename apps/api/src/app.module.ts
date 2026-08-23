@@ -5,8 +5,10 @@ import { validateEnv } from './infra/config/env';
 import { EventsModule } from './infra/events/events.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -15,10 +17,12 @@ import { ProjectsModule } from './modules/projects/projects.module';
     PrismaModule,
     EventsModule,
     HealthModule,
-    // Domain modules (added incrementally): AuthModule, UsersModule, CatalogModule,
-    // ProjectsModule, SubscriptionsModule, PaymentsModule, ImpactModule, NotificationsModule
+    // Domain modules (added incrementally): SubscriptionsModule,
+    // PaymentsModule, ImpactModule, NotificationsModule
+    AuthModule,
     CatalogModule,
     ProjectsModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

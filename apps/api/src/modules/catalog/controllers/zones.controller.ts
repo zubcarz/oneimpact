@@ -1,5 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '../../../common/decorators/public.decorator';
 import { CatalogService } from '../application/catalog.service';
 import { ZoneListDto } from './dto/zone.dto';
 import { ZoneDetailDto } from './dto/zone-detail.dto';
@@ -11,10 +12,11 @@ import { ZoneDetailDto } from './dto/zone-detail.dto';
  * `/v1`: `API_PATHS` (packages/shared) already includes it and is meant for
  * clients/e2e assertions, not for these decorators.
  *
- * No `@Public()` here: the `auth` module (and its global `JwtAuthGuard`) is
- * not implemented yet, so there is no guard to opt out of.
+ * `@Public()`: zones are public marketing content, browsable before
+ * registering or logging in.
  */
 @ApiTags('catalog')
+@Public()
 @Controller('zones')
 export class ZonesController {
   constructor(private readonly catalog: CatalogService) {}
