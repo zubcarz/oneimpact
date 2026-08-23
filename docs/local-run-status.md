@@ -159,6 +159,22 @@ envuelve, en `src/components/icons/TopoLines.tsx` (que ademas pasa
 Son deprecaciones de react-native-web: la pantalla funciona, pero conviene
 limpiarlas cuando se toque Inicio.
 
+### 7.4 Metro se cae solo con ENOENT si hay un worktree activo
+
+Sintoma: Metro muere con
+`Error: ENOENT: no such file or directory, watch '...\.claude\worktrees\<lane>
+ode_modules\prettier_tmp_NNNN'`
+y el proceso sale con codigo 7.
+
+Causa: `metro.config.js` vigilaba toda la raiz del monorepo, y los worktrees de
+`.claude/worktrees/` viven dentro de ella con su propio `node_modules`. Cuando
+otra lane instala o formatea, sus temporales aparecen y desaparecen, y el watcher
+de Metro se cae al intentar vigilar uno que ya no existe.
+
+Arreglo aplicado: `config.watchFolders` ahora apunta solo a
+`node_modules/` y `packages/` del workspace en vez de a la raiz entera
+(`apps/mobile` se vigila por defecto). Los worktrees dejan de estar en el radar.
+
 ## 8. Estado de verificacion
 
 - [OK] Postgres arriba, 3 migraciones aplicadas, seed cargado
