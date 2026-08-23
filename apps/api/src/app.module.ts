@@ -8,6 +8,7 @@ import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { ImpactModule } from './modules/impact/impact.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
@@ -20,10 +21,10 @@ import { UsersModule } from './modules/users/users.module';
     PrismaModule,
     EventsModule,
     HealthModule,
-    // Domain modules (added incrementally): NotificationsModule
     AuthModule,
     CatalogModule,
     ImpactModule,
+    NotificationsModule,
     PaymentsModule,
     ProjectsModule,
     SubscriptionsModule,

@@ -208,7 +208,7 @@ model ProjectFollow {
 model JourneyPoint {
   id        String        @id @default(cuid())
   userId    String
-  user      User          @relation(fields: [userId], references: [id])
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   month     String // format YYYY-MM
   source    JourneySource
   refId     String?
@@ -221,7 +221,7 @@ model JourneyPoint {
 model Notification {
   id        String           @id @default(cuid())
   userId    String
-  user      User             @relation(fields: [userId], references: [id])
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   title     String
   body      String
