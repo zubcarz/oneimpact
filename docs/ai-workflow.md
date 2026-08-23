@@ -244,3 +244,56 @@ corriendo en paralelo sobre la misma base. Sobre `apps/api lint`, que esta rama
 reporto como rojo preexistente (`02d45d4`): el item 02 lo arreglo en `378cd25`
 al borrar un `.prettierrc` residual del scaffold de Nest, asi que al integrar
 ambas ramas quedo en verde.
+
+## 2026-08-22 -- Auth JWT y roles en la API [api-auth-and-roles]
+
+**Pedido**: generar y ejecutar el plan del item 05 del roadmap
+(`.claude/roadmap/specs/05-api-auth-and-roles.md`): autenticacion JWT propia,
+refresh rotado, guard global y control de roles. A partir de este item **todo
+endpoint de la API es privado por defecto**. Plan:
+`.claude/plans/20260822-api-auth-and-roles.plan.md`.
+**Herramientas**: `/gen-plan` sobre el spec y `/run-plan-worktree` (worktree
+`.claude/worktrees/api-auth-and-roles`, rama `feat/api-auth-and-roles`); agentes
+`implementer` (6 invocaciones) y `verifier` (por fase y `--scope all`);
+`/ai-log`. El `debugger` no hizo falta.
+**Entrego**: `d408426` (schemas zod de auth en shared, `updateProfileSchema`
+estricto, ruta de logout, dos metodos que faltaban en api-client), `f1c6ddc`
+(modelo `RefreshToken` + migracion `refresh_tokens`), `e9c52ae` (modulo auth:
+registro, login, refresh con rotacion, logout; 16 unit tests), `9eb3f34` (guard
+global como `APP_GUARD`, `@Public()` en catalogo/proyectos/health/auth,
+throttling acotado al controller de auth), `e702c16` (`RolesGuard`, modulo
+`users`, listener de onboarding idempotente), `c591c64` (fix del `jti`, ver
+abajo), `e572ac3` (18 e2e de auth y roles).
+**Revision**: gate por fase con `quality-check.sh` acotado; lectura del diff de
+cada fase. Ademas de los tests, **tres probes descartables end-to-end** para no
+confiar solo en "sigue verde": (1) que el guard **cierra** de verdad
+(`POST /auth/logout` sin token -> 401 mientras `plans` y `health` siguen en
+200); (2) que login responde **identico** para email inexistente y password
+incorrecta (mismo `code`, mismo mensaje) y que el body no filtra
+`passwordHash`; (3) los seis criterios de roles (`/me` 401 sin token, 200 con
+token, `PATCH /me {role}` -> 400, `/admin/users` 403 como USER y 200 como
+ADMIN). Cierre `--scope all`: verde, 169 tests (31 shared + 5 api-client + 60
+api unit + 45 api e2e + 28 mobile + 1 playwright) y bundle de mobile OK.
+**Ajustes manuales**: (1) **Se encontro un defecto real de produccion, no de
+test**: `jwt.sign` estampa `iat`/`exp` con granularidad de un segundo, asi que
+dos refresh tokens firmados para el mismo usuario dentro del mismo segundo
+salian **byte-identicos** (verificado con un experimento directo). Al rotar, ese
+string verificaba contra la fila revocada y la nueva, y la deteccion de reuso
+podia leer un refresh legitimo como robado y **cerrarle la sesion al usuario**.
+El implementer lo habia tapado en el test con un `setTimeout(1100)`; se corrigio
+el codigo agregando un `jti` unico (`c591c64`) y se borro el sleep. (2) El plan
+proponia testear el throttling bajando `AUTH_THROTTLE_LIMIT` por `process.env`
+antes de construir la app: **el plan estaba equivocado**, `ConfigModule.forRoot`
+valida una sola vez al importar `AppModule`, antes de cualquier `beforeAll`. Se
+testea contra el limite real por defecto. (3) El spec 05 decia que
+`onboardingCompleted` era campo nuevo: ya existia desde el item 01, la migracion
+crea solo `RefreshToken`. (4) `@CurrentUser()` se tipo como
+`Pick<UserProfile,'id'|'email'|'role'>` y no como `UserProfile`, porque el access
+token no firma `name`: tiparlo completo habria sido mentir. (5) El `.env.example`
+lo edito el orquestador (ruta vedada al implementer).
+**Pendiente**: verificacion manual en el navegador de que `/docs` (Swagger)
+sigue accesible con el guard global activo. Sin deuda de tests: los e2e corrieron
+dos veces seguidas con el mismo resultado y `seed.e2e-spec.ts` sigue afirmando
+`user.count() === 2` sin relajarse (los specs nuevos borran los usuarios que
+crean). El item 06 (pagos y suscripciones) puede arrancar: el emisor de
+`subscription.activated` que espera el listener de `users` es suyo.
