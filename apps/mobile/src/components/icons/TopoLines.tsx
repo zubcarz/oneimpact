@@ -1,7 +1,15 @@
+import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '@oneimpact/ui-tokens';
 
-const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as const;
+const FILL = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  pointerEvents: 'none',
+} as const;
 
 /**
  * Los 10 paths bezier del "contorno topografico" decorativo del hero de Zonas
@@ -26,19 +34,21 @@ const TOPO_PATHS: string[] = [
  */
 export function TopoLines() {
   return (
-    <Svg
-      width="100%"
-      height="100%"
-      viewBox="0 0 900 400"
-      preserveAspectRatio="xMidYMid slice"
-      opacity={0.12}
-      style={FILL}
-      pointerEvents="none"
-      accessible={false}
-    >
-      {TOPO_PATHS.map((d) => (
-        <Path key={d} d={d} stroke={colors.topoLine} strokeWidth={1.2} fill="none" />
-      ))}
-    </Svg>
+    // El envoltorio lleva la posicion y `accessible={false}`: react-native-svg
+    // reenvia sus props sobrantes al <svg> del DOM en web (web/utils/prepare.js)
+    // y React rechaza `accessible` como atributo no booleano.
+    <View style={FILL} accessible={false}>
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 900 400"
+        preserveAspectRatio="xMidYMid slice"
+        opacity={0.12}
+      >
+        {TOPO_PATHS.map((d) => (
+          <Path key={d} d={d} stroke={colors.topoLine} strokeWidth={1.2} fill="none" />
+        ))}
+      </Svg>
+    </View>
   );
 }

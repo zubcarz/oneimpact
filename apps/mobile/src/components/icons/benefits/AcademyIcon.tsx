@@ -11,7 +11,7 @@ export interface AcademyIconProps {
  */
 export function AcademyIcon({ size = 40 }: AcademyIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 40 40">
       <Rect width={40} height={40} rx={8} fill={colors.darkGreen} />
       <Polygon points="20,10 32,16 20,22 8,16" fill={colors.white} />
       <Path

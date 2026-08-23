@@ -11,7 +11,7 @@ export interface JourneyIconProps {
  */
 export function JourneyIcon({ size = 40 }: JourneyIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 40 40">
       <Rect width={40} height={40} rx={8} fill={colors.darkGreen} />
       <Path
         d="M9 28 C13 28 13 20 20 20 S27 12 31 12"

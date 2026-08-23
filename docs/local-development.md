@@ -1,5 +1,8 @@
 # Local development
 
+> Snapshot of what already runs today (and the port 3000 clash on this machine):
+> [local-run-status.md](local-run-status.md).
+
 Everything runs on your machine: Postgres in Docker, API + admin as Node processes, mobile through Expo Go on a physical phone (or an emulator).
 
 ```

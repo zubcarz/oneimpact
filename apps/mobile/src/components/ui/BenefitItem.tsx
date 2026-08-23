@@ -21,7 +21,12 @@ export interface BenefitItemProps {
 export function BenefitItem({ icon, title, description, className, testID }: BenefitItemProps) {
   return (
     <View className={cx('flex-row items-start gap-4', className)} testID={testID}>
-      <View className="h-10 w-10">{icon}</View>
+      {/* `accessible={false}` va aqui y no en el Svg del icono: react-native-svg
+          reenvia sus props sobrantes al <svg> del DOM en web y React rechaza
+          `accessible` como atributo no booleano. El View si lo filtra. */}
+      <View className="h-10 w-10" accessible={false}>
+        {icon}
+      </View>
       <View className="flex-1">
         <Text className="font-bold text-gray-900">{title}</Text>
         <Text className="text-gray-500">{description}</Text>

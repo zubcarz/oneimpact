@@ -11,7 +11,7 @@ export interface WalletIconProps {
  */
 export function WalletIcon({ size = 40 }: WalletIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 40 40">
       <Rect width={40} height={40} rx={8} fill={colors.darkGreen} />
       <Rect
         x={8}

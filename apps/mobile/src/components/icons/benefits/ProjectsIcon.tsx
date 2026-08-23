@@ -11,7 +11,7 @@ export interface ProjectsIconProps {
  */
 export function ProjectsIcon({ size = 40 }: ProjectsIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 40 40">
       <Rect width={40} height={40} rx={8} fill={colors.darkGreen} />
       <Path
         d="M20 10 C16 10 13 13 13 17 C13 22.5 20 31 20 31 C20 31 27 22.5 27 17 C27 13 24 10 20 10Z"

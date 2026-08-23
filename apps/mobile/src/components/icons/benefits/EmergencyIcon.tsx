@@ -11,7 +11,7 @@ export interface EmergencyIconProps {
  */
 export function EmergencyIcon({ size = 40 }: EmergencyIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 40 40">
       <Rect width={40} height={40} rx={8} fill={colors.darkGreen} />
       <Path
         d="M20 10 L29 14 L29 22 C29 27.5 20 32 20 32 C20 32 11 27.5 11 22 L11 14 Z"
