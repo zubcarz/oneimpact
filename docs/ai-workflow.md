@@ -349,3 +349,86 @@ dos veces seguidas con el mismo resultado y `seed.e2e-spec.ts` sigue afirmando
 `user.count() === 2` sin relajarse (los specs nuevos borran los usuarios que
 crean). El item 06 (pagos y suscripciones) puede arrancar: el emisor de
 `subscription.activated` que espera el listener de `users` es suyo.
+
+## 2026-08-23 -- Pago simulado, suscripciones y efectos por eventos [api-payments-subscriptions-events]
+
+**Pedido**: ejecutar el item 06 del roadmap, el nucleo de negocio de la API: pago
+simulado -> suscripcion activa -> efectos en `impact` y `notifications` **solo
+por eventos**, mas escritura de proyectos, avances y follows. Plan en
+`.claude/plans/20260822-api-payments-subscriptions-events.plan.md`.
+**Herramientas**: `/gen-plan` sobre el spec del roadmap, `/run-plan-worktree`
+(worktree aislado, rama `feat/api-payments-subscriptions-events`), agentes
+`implementer` (12 invocaciones, una por tarea) y `verifier` (4), skill `/ai-log`.
+Un intento de `/run-plan-autonomous` se aborto en la validacion por estar sobre
+`main`.
+**Entrego**: 6 commits, 72 archivos, ~5000 lineas. `6a24006` contrato de
+respuesta en shared; `483cb9c` modulos `payments` y `subscriptions`; `d35604f`
+escritura de proyectos, follows y firma de subida; `9365baf` modulo `impact`;
+`c9d46f6` modulo `notifications`; `7ee29c8` e2e de los cinco criterios de
+aceptacion.
+**Revision**: `--scope all` verde al cierre: 21 pasos, incluidos el bundle de
+Metro y el Playwright del admin. 106 unit de api, 74 e2e de api, 44 de shared.
+La suite e2e se corrio **dos veces seguidas** verificando que la DB vuelve al
+seed exacto. Ademas de los tests, greps de invariantes: que el PAN no aparezca en
+`payments`/`subscriptions`, que no haya `throw new Error` en use cases, que
+`projects.controller.ts` (que es `@Public()`) no ganara endpoints de escritura, y
+que ningun modulo importe servicios de otro.
+
+**Ajustes manuales** (lo mas util de esta entrada):
+
+1. **El plan mismo estaba mal en un punto de dominio y lo corrigio un agente.**
+   El orquestador instruyo "sin suscripcion activa, los contadores en 0"; el
+   implementer lo cumplio al pie de la letra pero **marco la contradiccion** con
+   el criterio de aceptacion "cancelar -> el journey point sigue". Tenia razon:
+   `journeyPoints`, `followedProjects` y `unreadNotifications` son hechos del
+   usuario, no de la suscripcion. Se corrigio y se agrego un test que traduce el
+   criterio del spec literalmente.
+2. **`strip` de zod no alcanzaba para la invariante del PAN.** Un test revelo que
+   `createSubscriptionSchema` aceptaba un `card.number` y devolvia **200**
+   descartando el campo en silencio. La invariante del repo dice que el PAN nunca
+   llega al servidor **ni a un log**, y con strip si llegaba: estaba en el body
+   crudo, al alcance de pino. Se aplico `.strict()` siguiendo el precedente de
+   `updateProfileSchema`; ahora es 400.
+3. **`Payment.subscriptionId` era NOT NULL y el pago ocurre antes de la
+   suscripcion**, asi que era imposible persistir un pago rechazado. Migracion:
+   campo opcional + `userId` para que el rechazo sea atribuible.
+4. **El 402 no cumplia el spec.** El implementer embebio el `reason` como sufijo
+   de texto en el mensaje, y lo reporto como desviacion. El spec pide `{ reason }`
+   estructurado. Se agrego un campo `details` opcional a `DomainError` y al
+   filter, de forma aditiva.
+5. **Regresion encontrada por los e2e, no por revision.** Al empezar a crear una
+   notificacion por cada registro, los `afterAll` de `auth` y `users` e2e
+   (escritos en el item 05) chocaban contra la FK de `Notification`, dejaban
+   usuarios colgados y `seed.e2e-spec.ts` contaba 4 usuarios en vez de 2. Se
+   arreglo la causa (`onDelete: Cascade` en `JourneyPoint` y `Notification`,
+   consistente con `RefreshToken` y `ProjectFollow`) en vez de parchear el
+   `afterAll` de cada spec. `Payment` queda en RESTRICT a proposito: es rastro
+   financiero.
+6. **El plan predijo una migracion que no existe.** `@default(cuid())` en
+   `ProjectUpdate.id` es un default del cliente Prisma y no genera DDL:
+   `migrate dev` respondio "already in sync".
+7. **Un `verifier` reporto ROJO falso**: se salio del worktree y midio el arbol
+   principal (60 unit / 45 e2e, la linea base de `main`), concluyendo que el
+   modulo `impact` no existia. Se comprobo a mano: existia y estaba verde. Leccion
+   de proceso: al agente hay que anclarle la raiz de trabajo y **contrastar su
+   reporte cuando los conteos no cuadran con lo ya visto**.
+8. El bootstrap del worktree necesito dos pasos que el comando no contempla:
+   copiar `apps/api/.env` (esta en `.gitignore`) y **compilar `packages/shared`**,
+   porque la API resuelve el paquete contra `dist/` y sin build el typecheck da
+   38 falsos negativos. El `.env.example` lo edito el orquestador: es ruta vedada
+   al implementer, que se nego correctamente.
+
+**Pendiente**:
+- **La firma real contra Supabase Storage esta SIN CONFIRMAR.** Se implemento con
+  `fetch` sobre la REST API, sin agregar el SDK, pero en local no hay credenciales
+  y solo se ejercito la rama de fallback (`simulated: true`). Queda para el item 14.
+- **La excepcion de `payments` no esta anotada en las reglas.** `subscriptions`
+  importa `PaymentsService` (decision D2a: el flujo del vault es sincrono y no
+  existe un evento `payment.requested` con el que invertir la dependencia). Esta
+  justificada en el doc del modulo, pero falta la nota en
+  `.claude/rules/30-api-event-driven.md`; los comandos de ejecucion tienen
+  prohibido escribir ahi. Sin esa nota, `rv-1` la reportara como violacion.
+- Falta marcar el item 06 como hecho en `.claude/roadmap/ROADMAP.md`, por la misma
+  razon.
+- Sin deuda de tests: ninguna supresion nueva, ningun `skip`, ningun assert
+  relajado.
