@@ -244,3 +244,55 @@ corriendo en paralelo sobre la misma base. Sobre `apps/api lint`, que esta rama
 reporto como rojo preexistente (`02d45d4`): el item 02 lo arreglo en `378cd25`
 al borrar un `.prettierrc` residual del scaffold de Nest, asi que al integrar
 ambas ramas quedo en verde.
+
+## 2026-08-22 -- Pantalla Suscripcion en mobile [mobile-subscription-screen]
+
+**Pedido**: generar y ejecutar el plan del item 04 del roadmap
+(`.claude/roadmap/specs/04-mobile-subscription-screen.md`): collage, toggle
+Mensual/Anual, selector de 3 planes con precio reactivo, CTA y los 6 beneficios
+con sus iconos del vault. Plan resultante:
+`.claude/plans/20260822-mobile-subscription-screen.plan.md`.
+**Herramientas**: `/gen-plan` sobre el spec del roadmap y `/run-plan-worktree`
+en `.claude/worktrees/mobile-subscription-screen` (rama
+`feat/mobile-subscription-screen` desde `main`); skills `oneimpact-context` y
+`quality-guardrails`; agentes `implementer` (7 invocaciones, una por tarea) y
+`verifier` (gate por fase y `--scope all` al cierre). El `debugger` no hizo
+falta: ninguna fase llego roja al gate.
+**Entrego**: `bdc84ae` (copy y datos: `src/data/subscription.ts` con el collage,
+los 6 beneficios y `formatMonthlyPrice` sobre `PLANS`, 3 tests), `1229e61`
+(`BillingToggle` y `PlanSelector` controlados, 9 tests RNTL escritos antes de la
+implementacion), `a22ad90` (collage, hero, CTA y la ruta armada, reemplazando el
+placeholder del scaffold), `11443dc` (los 6 iconos transcritos a
+`react-native-svg`, `BenefitItem` y la seccion de beneficios).
+**Revision**: gate por fase con `quality-check.sh` acotado al scope, con `bundle`
+(`expo export`) en las dos fases que agregan assets; lectura del diff de cada
+fase por el orquestador antes de commitear. **Verificacion propia de la
+transcripcion de los 6 SVG**: se comparo, contra los archivos del vault, el
+conteo de elementos y **todos** los numeros de geometria en orden; coinciden
+exactamente (la unica diferencia son los digitos de `#243b1a`, que desaparecen
+justamente porque el componente usa el token). Cierre `--scope all`: 21 pasos en
+verde, con 42 tests de mobile, bundle expo y Playwright.
+**Ajustes manuales**: (1) **La decision abierta del spec se resolvio contra su
+propio default**: proponia `SvgXml` leyendo el `.svg`; se transcribieron los
+iconos como hace `TopoLines.tsx`, porque los archivos del vault traen `#243b1a`
+hardcodeado y meterlo como string dejaria un hex de marca dentro de un
+componente. (2) El implementer entrego dos parches que doblaban el codigo de
+produccion para acomodar mocks incompletos del test: un `?.catch()` porque el
+mock de `expo-haptics` devolvia `undefined` en vez de una promesa, y un glifo de
+texto en vez del icono `Check` de lucide porque el test no mockeaba
+`lucide-react-native`. Se corrigieron **los mocks** (que es lo que ya hacen
+`ZoneRow.test.tsx` y compania) y se restauro el codigo correcto: `.catch()`
+plano e icono lucide real. Los asserts no se tocaron. (3) Revisando el
+resultado aparecio que `subscriptionScreen.billing.perMonth` habia quedado como
+dato muerto: el vault pide mostrar `$8/mes` y se mostraba `$8`. Corregido.
+(4) La tabla Estado del roadmap mentia: marcaba 01, 02 y 03 como pendientes
+cuando los tres ya estaban mergeados en `main`. Corregida con sus rangos reales.
+**Pendiente**: **verificacion visual en Expo Go, no hecha**. Concretamente:
+collage sin bandas ni gaps con `hero-main` anclada arriba, header blanco legible
+sobre la foto, sombra del plan seleccionado (`shadow-md` rinde distinto en
+Android), el haptic al tocar plan/billing, y **los 6 iconos comparados a ojo
+contra los SVG del vault** -- la geometria se verifico por diff, pero el render
+no se miro. La rama **no esta mergeada**: cierra con
+`/merge-plan mobile-subscription-screen`. Nota para el item 09: el CTA hoy
+levanta un `Alert`; el destino real
+`/(auth)/register?plan=<id>&billing=<billing>` esta anotado en el codigo.

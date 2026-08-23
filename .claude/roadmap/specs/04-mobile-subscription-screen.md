@@ -41,3 +41,29 @@ Manual: collage sin bandas, haptic, sombra del plan seleccionado.
 
 ## Commits sugeridos
 `feat(mobile): subscription screen with plan selector` · `feat(mobile): subscription benefits list`
+
+## Notas de ejecucion (2026-08-22)
+
+Ejecutado en `feat/mobile-subscription-screen`. Desviaciones respecto de este spec:
+
+1. **Los 6 iconos se transcriben, no se leen.** El spec dejaba la decision abierta
+   y proponia `SvgXml` sobre el string del vault. Se transcribieron a componentes
+   `react-native-svg` en `apps/mobile/src/components/icons/benefits/`, siguiendo el
+   precedente de `src/components/icons/TopoLines.tsx`. Motivo: los `.svg` del vault
+   traen `#243b1a` hardcodeado, y meterlo como string dejaria un hex de marca dentro
+   de un componente, que es un hallazgo bloqueante del repo. Transcritos, el fondo usa
+   `colors.darkGreen` y los trazos `colors.white`.
+   **Consecuencia**: NO existe `apps/mobile/src/assets/svg/benefit-*.svg`, a diferencia
+   de lo que dice el write-scope de arriba.
+2. **Los tests no van colocados.** Van a `apps/mobile/__tests__/`, donde estan los
+   demas. La config es `jest-expo` sin `jest.setup`.
+3. **El haptic difiere del precedente.** Se implemento `impactAsync(ImpactFeedbackStyle.Light)`
+   como pide este spec; el unico uso previo en el repo
+   (`src/features/home/Testimonials.tsx:30`) usa `selectionAsync`. No se unifico:
+   Testimonials esta fuera del alcance de este item.
+4. **El precio se muestra como `$8/mes`**, no `$8` a secas. Lo pide el vault
+   (`pantallas/suscripcion.md`, seccion 2: "`$` + precio + `/mes`") y es para lo que
+   existe la etiqueta `perMonth` del copy.
+5. **Sin animacion del precio** al alternar Mensual/Anual. El vault la sugiere
+   (`LayoutAnimation`/Reanimated), este spec no la lista en el alcance y quedo fuera.
+   Reanimated ya esta instalado: agregarla es aditivo.
