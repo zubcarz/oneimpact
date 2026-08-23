@@ -111,4 +111,42 @@ describe('createApiClient', () => {
 
     await expect(client.subscriptions.cancel()).resolves.toBeUndefined();
   });
+
+  it('resolves plans.list() with the paginated { items, total } envelope', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, {
+        items: [
+          {
+            id: 'estandar',
+            name: 'Estandar',
+            monthlyPrice: 10,
+            annualMonthlyPrice: 8,
+            annualTotal: 96,
+            recommended: true,
+          },
+        ],
+        total: 1,
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = createApiClient({ baseUrl: 'http://api.test' });
+    const result = await client.plans.list();
+
+    expect(result.items).toHaveLength(1);
+    expect(result.total).toBe(1);
+  });
+
+  it('sends the refreshToken in the body when logging out', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(204, undefined));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = createApiClient({ baseUrl: 'http://api.test', getToken: () => 'token-abc' });
+
+    await expect(client.auth.logout({ refreshToken: 'refresh-xyz' })).resolves.toBeUndefined();
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe(JSON.stringify({ refreshToken: 'refresh-xyz' }));
+  });
 });

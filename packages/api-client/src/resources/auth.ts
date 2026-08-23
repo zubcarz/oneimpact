@@ -19,9 +19,12 @@ export function createAuthResource(request: RequestFn) {
         method: 'POST',
         body: JSON.stringify(input),
       }),
-    logout: () =>
+    // Logout requires an access token (not @Public()) and needs the refresh
+    // token in the body so the API can revoke that specific session.
+    logout: (input: { refreshToken: string }) =>
       request<void>(API_PATHS.auth.logout, {
         method: 'POST',
+        body: JSON.stringify(input),
       }),
   };
 }
