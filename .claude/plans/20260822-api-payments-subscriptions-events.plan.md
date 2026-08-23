@@ -52,40 +52,46 @@ Al cerrar el plan, los cinco criterios de aceptacion e2e del spec pasan.
 15. `impact` necesita leer `Subscription`, `ProjectFollow`, `ProjectUpdate` y `Notification` para `GET /v1/dashboard/me`. Lo hace **con su propio repositorio sobre `PrismaService`** (infra, permitido), nunca inyectando servicios de `subscriptions`/`projects`/`notifications`. Para el `Plan` del dashboard **si** puede inyectar `CatalogService`, que esta exportado a proposito (`apps/api/src/modules/catalog/catalog.module.ts:18`).
 16. `EventsModule` es `@Global()` y ya esta en `AppModule` (`apps/api/src/app.module.ts:18`), y `app.module.ts:20-21` deja escrito el hueco para `SubscriptionsModule, PaymentsModule, ImpactModule, NotificationsModule`. Registrarlos es un renglon por fase.
 
-## Decisiones pendientes (bloqueantes)
+## Decisiones RESUELTAS (2026-08-22, Carlos)
 
-Cada una lleva **recomendacion**; si el ejecutor la acepta, no bloquea. Si se
-elige otra opcion, cambia el alcance de la fase indicada.
+**No queda ninguna decision bloqueante.** Carlos acepto las **seis opciones (a)**,
+las recomendadas: D1a, D2a, D3a, D4a, D5a y D6. La ejecucion procede con ellas
+sin volver a preguntar.
 
-**D1 (bloquea fase 2) -- Como se persiste un pago rechazado.**
+Se dejan abajo las opciones descartadas a proposito: la entrada de
+`docs/ai-workflow.md` (fase 6) tiene que contar **que se decidio y por que**, y
+sin la alternativa esa entrada no dice nada. La opcion elegida esta marcada
+**[ELEGIDA]** en cada una.
+
+**D1 [RESUELTA: a] -- Como se persiste un pago rechazado.**
 `Payment.subscriptionId` es NOT NULL y el pago ocurre antes de la suscripcion.
 
-- (a) **Recomendada**: migracion aditiva `payment_user_and_optional_subscription`: `subscriptionId String?` (opcional) + `userId String` con relacion a `User` (+ `payments Payment[]` en `User`). Un rechazo queda persistido y atribuible; el item 12 (metricas admin) lo va a necesitar. La tabla `Payment` esta **vacia** en cualquier entorno (el seed nunca la escribe: `grep payment apps/api/prisma/seed.ts` no devuelve nada), asi que agregar una columna NOT NULL no requiere backfill.
+- (a) **[ELEGIDA]**: migracion aditiva `payment_user_and_optional_subscription`: `subscriptionId String?` (opcional) + `userId String` con relacion a `User` (+ `payments Payment[]` en `User`). Un rechazo queda persistido y atribuible; el item 12 (metricas admin) lo va a necesitar. La tabla `Payment` esta **vacia** en cualquier entorno (el seed nunca la escribe: `grep payment apps/api/prisma/seed.ts` no devuelve nada), asi que agregar una columna NOT NULL no requiere backfill.
 - (b) No persistir los pagos FAILED (solo emitir `payment.failed`). Cero migracion, pero se pierde la auditoria y contradice "Crea `Payment{simulated:true,...}`" del spec.
 
-**D2 (bloquea fase 2) -- Como llama `subscriptions` a `payments`.**
+**D2 [RESUELTA: a] -- Como llama `subscriptions` a `payments`.**
 
-- (a) **Recomendada**: `PaymentsModule` **exporta** `PaymentsService` y se declara como **segunda excepcion sancionada** a la regla de oro (junto a `catalog`), documentada en el doc de clase del modulo y anotada en `.claude/rules/30-api-event-driven.md`. Justificacion: el flujo del vault es sincrono (`arquitectura-sistema.md`, "Flujo clave" paso 3) y la tabla de eventos **no tiene** un `payment.requested` con el que invertir la dependencia; inventarlo seria salirse del contrato de 8 eventos.
+- (a) **[ELEGIDA]**: `PaymentsModule` **exporta** `PaymentsService` y se declara como **segunda excepcion sancionada** a la regla de oro (junto a `catalog`), documentada en el doc de clase del modulo y anotada en `.claude/rules/30-api-event-driven.md`. Justificacion: el flujo del vault es sincrono (`arquitectura-sistema.md`, "Flujo clave" paso 3) y la tabla de eventos **no tiene** un `payment.requested` con el que invertir la dependencia; inventarlo seria salirse del contrato de 8 eventos.
 - (b) Mover el simulador a `src/infra/payments/` como servicio de infraestructura global (como `EventBus`), dejando `modules/payments/` inexistente. Respeta la regla al pie de la letra pero se aparta de la estructura del vault (`backend-nest.md:25`), que lista `payments/` como modulo.
 
-**D3 (bloquea fase 3) -- Id de `ProjectUpdate` creado por API.**
+**D3 [RESUELTA: a] -- Id de `ProjectUpdate` creado por API.**
 
-- (a) **Recomendada**: migracion `project_update_generated_id` que agrega `@default(cuid())` a `ProjectUpdate.id`. Es aditiva (no toca filas existentes, los ids estables del seed se siguen pasando explicitos) y evita tener dos politicas de id conviviendo.
+- (a) **[ELEGIDA]**: migracion `project_update_generated_id` que agrega `@default(cuid())` a `ProjectUpdate.id`. Es aditiva (no toca filas existentes, los ids estables del seed se siguen pasando explicitos) y evita tener dos politicas de id conviviendo.
 - (b) Generar el id en el repositorio (`crypto.randomUUID()`), sin migracion.
 
-**D4 (bloquea fase 3) -- Slug de un proyecto creado por el admin.**
+**D4 [RESUELTA: a] -- Slug de un proyecto creado por el admin.**
 `createProjectSchema` no lo pide y `Project.slug` es unico obligatorio.
 
-- (a) **Recomendada**: derivarlo en el servidor desde `title` (minusculas, sin acentos, `-`), con sufijo `-2`, `-3`... ante colision. No cambia el contrato de `shared` ni el form del admin (item 11).
+- (a) **[ELEGIDA]**: derivarlo en el servidor desde `title` (minusculas, sin acentos, `-`), con sufijo `-2`, `-3`... ante colision. No cambia el contrato de `shared` ni el form del admin (item 11).
 - (b) Agregar `slug` opcional a `createProjectSchema`. Cambia el contrato y obliga a tocar el form del admin.
 
-**D5 (no bloquea, decidir en fase 3) -- `mediaUrl` vs `mediaKey`.**
+**D5 [RESUELTA: a] -- `mediaUrl` vs `mediaKey`.**
 `publishUpdateSchema.mediaUrl` es una URL; Prisma guarda `mediaKey`.
 
-- (a) **Recomendada**: el use case acepta `mediaUrl` tal cual llega (es lo que devuelve `POST /v1/uploads/sign`) y lo guarda en `mediaKey`, sea clave relativa o URL absoluta (el borde ya resuelve ambas). Cero cambio de contrato en esta ola.
+- (a) **[ELEGIDA]**: el use case acepta `mediaUrl` tal cual llega (es lo que devuelve `POST /v1/uploads/sign`) y lo guarda en `mediaKey`, sea clave relativa o URL absoluta (el borde ya resuelve ambas). Cero cambio de contrato en esta ola.
 - (b) Renombrar el campo a `mediaKey` en `packages/shared`. Cambio destructivo del contrato en plena ola 3, con el admin (item 11) escribiendose en paralelo. **No recomendado ahora**; anotarlo como deuda para item 12/13.
 
-**D6 (no bloquea) -- Fallback de `POST /v1/uploads/sign` sin credenciales.**
+**D6 [RESUELTA] -- Fallback de `POST /v1/uploads/sign` sin credenciales.**
 El spec lo autoriza: si faltan `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` /
 `SUPABASE_STORAGE_BUCKET` (todas nuevas y **opcionales** en `env.ts`), devolver
 una URL local ficticia y **marcar la respuesta con `simulated: true`** para que

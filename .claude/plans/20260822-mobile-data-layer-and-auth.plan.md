@@ -10,6 +10,7 @@
 > **Zonas de riesgo**: (1) **auth y tokens** -- secure-store, refresh 401, `role` desde `GET /me`; (2) **MSW dentro de Metro/Jest** -- dependencias nuevas con polyfills, se verifica con `expo export`; (3) **config de bundling** -- si hace falta tocar `metro.config.js` o `transformIgnorePatterns`; (4) dos **mismatches reales de contrato** ya detectados en `packages/api-client`. Pago simulado: **no se toca** en este item (es el 09).
 > **Fase del roadmap**: Fase 1 (entrega lun 24 ago 2026 18:00) -- ola 2
 > **Como ejecutar**: `/run-plan-worktree` (el que indica el spec) | `/run-plan-guided`
+> **Decisiones**: D1, D2, D3 y D4 **resueltas** el 2026-08-22 -- el usuario aprueba las recomendaciones del plan tal cual. Unico pendiente operativo: la instalacion de las dependencias de MSW (D4) la corre el usuario antes de la Fase 3.
 
 ## Objetivo
 
@@ -148,7 +149,11 @@ y `bundle` (`expo export --platform android`, `scripts/dev/quality-check.sh:63-6
   Es config de test, no de produccion, pero cuenta como cambio de config: se
   verifica con `unit` **y** con `bundle`.
 
-## Decisiones pendientes (bloqueantes)
+## Decisiones resueltas (aprobadas por el usuario el 2026-08-22)
+
+Las cuatro decisiones bloqueantes se cierran con la recomendacion del plan. Se
+conserva el razonamiento completo abajo porque es lo que justifica cada eleccion
+durante la review; lo que cambia es que ninguna frena la ejecucion.
 
 **D1 -- Los dos mismatches de `packages/api-client` (M1, M2): se arreglan o se
 parchean en el hook.**
@@ -158,7 +163,9 @@ _Recomendacion_: **arreglarlos en `packages/api-client`, en una fase propia y
 con su commit separado** (Fase 1). Adaptar en el hook dejaria la mentira de tipos
 viva para el admin (item 11), que va a consumir `plans.list()` y `auth.logout()`
 en pocas horas, y contradice "schemas y contrato una sola vez". El coste es un
-commit de 2 lineas + 2 asserts. **Bloquea la Fase 1.**
+commit de 2 lineas + 2 asserts.
+**RESUELTA: se arreglan en `packages/api-client`, en la Fase 1, con commit
+propio. Extension de write-scope aprobada.**
 
 **D2 -- De donde salen los "avances" cuando los datos son remotos.**
 Opciones:
@@ -173,7 +180,8 @@ Opciones:
   5 requests para pintar un carrusel.
 - (c) Agregar `updates` al DTO de `/v1/zones/:slug` en la API. Fuera de scope y
   fuera de ola.
-  _Recomendacion_: **(a)**. **Bloquea la Fase 5.**
+  _Recomendacion_: **(a)**.
+  **RESUELTA: se implementa (a) -- la tarjeta de avance se deriva del `Project`.**
 
 **D3 -- `assetFor()` con una clave desconocida desde la red.**
 Hoy lanza (`src/data/zones.ts:32-38`). Opciones: (a) mantener estricto y aceptar
@@ -182,7 +190,9 @@ sin imagen; (c) un asset placeholder nuevo.
 _Recomendacion_: **(b)** -- se agrega `assetForKey(key): number | undefined` para
 el camino remoto y `assetFor` estricto se conserva para el camino del seed (y su
 test, `__tests__/zones-data.test.ts:30-32`, sigue valido). Sin assets nuevos, sin
-crash. **Bloquea la Fase 5.**
+crash.
+**RESUELTA: se implementa (b) -- `assetForKey` no estricto para el camino
+remoto, `assetFor` estricto se conserva para el camino del seed.**
 
 **D4 -- Dependencias nuevas de MSW: version y alcance.**
 Hacen falta `msw` (2.x, la unica que expone `msw/native`),
@@ -191,7 +201,10 @@ Hacen falta `msw` (2.x, la unica que expone `msw/native`),
 abierta: si tras instalar hace falta tocar `metro.config.js` o
 `transformIgnorePatterns`, eso amplia el write-scope del spec.
 _Recomendacion_: instalar, medir con `expo export`, y **solo si falla** tocar
-config, anotandolo como desviacion. **Bloquea la Fase 3.**
+config, anotandolo como desviacion.
+**RESUELTA: se instala, se mide con `expo export`, y solo si falla se toca
+config, anotando la desviacion. PENDIENTE OPERATIVO: el `pnpm add` lo corre el
+usuario dentro del worktree, antes de arrancar la Fase 3.**
 
 **D5 -- Hooks sin endpoint real (no bloqueante, se anota).**
 `useDashboard`, `useNotifications`, `useCreateSubscription` y `useFollowProject`
@@ -249,7 +262,9 @@ las tres decisiones bloqueantes esten resueltas.
 4. Confirmar que `msw`, `react-native-url-polyfill` y `fast-text-encoding` NO
    estan instalados, y **pedir al usuario que los instale** (D4) antes de la
    Fase 3. La instalacion no la hace el implementer.
-5. Cerrar D1, D2 y D3 con el usuario.
+5. D1, D2, D3 y D4 ya estan **resueltas** (ver el header): no hay nada que
+   negociar aca. Lo unico que se comprueba es que las dependencias de MSW esten
+   instaladas antes de llegar a la Fase 3.
 
 **Verificacion** (acotada a la fase):
 

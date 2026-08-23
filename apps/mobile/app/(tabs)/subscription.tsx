@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import type { Billing, PlanId } from '@oneimpact/shared';
-import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
+import { Header, FullScreenMenu, Screen } from '@/components/layout';
 import {
   SubscriptionBenefits,
   SubscriptionCollage,
@@ -32,7 +32,6 @@ export default function SubscriptionScreen() {
         onCtaPress={handleCtaPress}
       />
       <SubscriptionBenefits />
-      <Footer />
     </Screen>
   );
 }

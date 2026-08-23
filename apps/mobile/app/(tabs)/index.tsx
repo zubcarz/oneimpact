@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
+import { Header, FullScreenMenu, Screen } from '@/components/layout';
 import {
   AlliesSection,
   HeroSection,
@@ -22,7 +22,6 @@ export default function IndexScreen() {
       <Testimonials />
       <AlliesSection />
       <StatsBanner />
-      <Footer />
     </Screen>
   );
 }

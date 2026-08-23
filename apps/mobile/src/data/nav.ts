@@ -1,5 +1,7 @@
 /**
- * Navegacion compartida por Header/FullScreenMenu/Footer (`02-Analisis-Visual/componentes.md`).
+ * Navegacion compartida por Header y FullScreenMenu (`02-Analisis-Visual/componentes.md`).
+ * El footer de pagina se retiro de las pantallas por decision de producto: sus
+ * enlaces, el contacto y el copyright viven ahora dentro del menu principal.
  * `href` se tipa como `string` porque algunas rutas (`/about`, `/projects`) todavia
  * no existen como pantallas; se navega con un cast tipado a `Href` en el punto de uso.
  */
@@ -12,30 +14,22 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'Inicio', href: '/' },
   { label: 'Zonas One Impact', href: '/zones' },
-  { label: 'Como aportar', href: '/subscription' },
-  { label: 'Quienes somos', href: '/about' },
+  // Unico destino que solo existia en el footer; entra al menu para no perderlo.
+  { label: 'Proyectos', href: '/projects' },
+  { label: 'Cómo aportar', href: '/subscription' },
+  { label: 'Quiénes somos', href: '/about' },
 ];
 
 export const joinCta: NavItem = {
-  label: 'Unete a One Impact',
+  label: 'Únete a One Impact',
   href: '/subscription',
 };
 
-export const footerMenu: NavItem[] = [
-  { label: 'Inicio', href: '/' },
-  { label: 'Zonas de Impacto', href: '/zones' },
-  { label: 'Proyectos', href: '/projects' },
-  { label: 'Sobre Nosotros', href: '/about' },
-  { label: 'Suscripcion', href: '/subscription' },
-];
-
 export const contactEmail = 'hola@oneimpact.org';
-
-export const footerTagline = 'Infraestructura abierta para monitorear impacto colectivo verificado';
 
 export const copyright = '© 2026 One Impact. Todos los derechos reservados.';
 
 export const navAccessibilityLabels = {
-  openMenu: 'Abrir menu',
-  closeMenu: 'Cerrar menu',
+  openMenu: 'Abrir menú',
+  closeMenu: 'Cerrar menú',
 } as const;

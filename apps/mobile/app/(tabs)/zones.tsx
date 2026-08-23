@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Footer, Header, FullScreenMenu, Screen } from '@/components/layout';
+import { Header, FullScreenMenu, Screen } from '@/components/layout';
 import { AdvancesCarousel, ZonesHero, ZonesList } from '@/features/zones';
 
 export default function ZonesScreen() {
@@ -12,7 +12,6 @@ export default function ZonesScreen() {
       <ZonesHero />
       <ZonesList />
       <AdvancesCarousel />
-      <Footer />
     </Screen>
   );
 }

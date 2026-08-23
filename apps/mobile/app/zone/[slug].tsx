@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Footer, Screen } from '@/components/layout';
+import { Screen } from '@/components/layout';
 import { Button } from '@/components/ui';
 import { ZoneAdvances, ZoneDetailHero, ZoneEmptyAdvances } from '@/features/zones';
 import { advancesByZone, getZone, zoneDetail } from '@/data/zones';
@@ -43,7 +43,6 @@ export default function ZoneDetailScreen() {
         <Button variant="accent" size="lg" fullWidth label={zoneDetail.cta} onPress={handleCta} />
       </View>
 
-      <Footer />
     </Screen>
   );
 }

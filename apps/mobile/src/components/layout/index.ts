@@ -7,4 +7,3 @@ export type { HeaderProps, HeaderLogo } from './Header';
 export { FullScreenMenu } from './FullScreenMenu';
 export type { FullScreenMenuProps } from './FullScreenMenu';
 
-export { Footer } from './Footer';
