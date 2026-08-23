@@ -41,7 +41,7 @@ describe('TokensService', () => {
       expect(payload).toMatchObject({ sub: user.id, email: user.email, role: user.role });
     });
 
-    it('embeds only sub in the refresh token payload', () => {
+    it('embeds sub and a jti, but no email or role, in the refresh token payload', () => {
       const service = buildService();
       const { refreshToken } = service.issuePair(user);
 
@@ -49,8 +49,24 @@ describe('TokensService', () => {
       const payload = jwt.verify<RefreshTokenPayload>(refreshToken, { secret: REFRESH_SECRET });
 
       expect(payload).toMatchObject({ sub: user.id });
+      expect(typeof payload.jti).toBe('string');
+      expect(payload.jti.length).toBeGreaterThan(0);
       expect(payload).not.toHaveProperty('email');
       expect(payload).not.toHaveProperty('role');
+    });
+
+    it('issues distinct refresh tokens for two calls in the same tick, even for the same user', () => {
+      // Regression test: without a unique `jti`, `{ sub }` plus a
+      // second-granularity `iat`/`exp` made two refresh tokens issued for the
+      // same user within the same wall-clock second byte-identical, which
+      // broke rotation (a reused token would match both the revoked and the
+      // active row).
+      const service = buildService();
+
+      const first = service.issuePair(user);
+      const second = service.issuePair(user);
+
+      expect(second.refreshToken).not.toBe(first.refreshToken);
     });
   });
 

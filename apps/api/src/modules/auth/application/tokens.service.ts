@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { randomUUID } from 'node:crypto';
 import * as argon2 from 'argon2';
 import type { AuthTokens } from '@oneimpact/shared';
 import { DomainError } from '../../../common/errors/domain-error';
@@ -13,6 +14,7 @@ export interface AccessTokenPayload {
 
 export interface RefreshTokenPayload {
   sub: string;
+  jti: string;
 }
 
 const ACCESS_TOKEN_TTL = '15m';
@@ -38,8 +40,11 @@ export class TokensService {
       { sub: user.id, email: user.email, role: user.role },
       { secret: this.accessSecret(), expiresIn: ACCESS_TOKEN_TTL },
     );
+    // `jti` gives every refresh token a unique identity: `iat`/`exp` have
+    // 1-second granularity, so two refresh tokens issued for the same user
+    // within the same wall-clock second would otherwise be byte-identical.
     const refreshToken = this.jwt.sign<RefreshTokenPayload>(
-      { sub: user.id },
+      { sub: user.id, jti: randomUUID() },
       { secret: this.refreshSecret(), expiresIn: REFRESH_TOKEN_TTL },
     );
     return { accessToken, refreshToken };
