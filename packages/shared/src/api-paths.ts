@@ -25,6 +25,10 @@ export const API_PATHS = {
   subscriptionsMe: '/v1/subscriptions/me',
   dashboardMe: '/v1/dashboard/me',
   notificationsMe: '/v1/notifications/me',
+  notificationRead: (id: string) => `/v1/notifications/${id}/read`,
+  uploads: {
+    sign: '/v1/uploads/sign',
+  },
   admin: {
     metrics: '/v1/admin/metrics',
     users: '/v1/admin/users',

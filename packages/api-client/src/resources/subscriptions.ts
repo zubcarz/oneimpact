@@ -9,7 +9,8 @@ export function createSubscriptionsResource(request: RequestFn) {
         method: 'POST',
         body: JSON.stringify(input),
       }),
-    me: () => request<Subscription | null>(API_PATHS.subscriptionsMe),
+    // No active subscription is a 404 SUBSCRIPTION_NOT_FOUND, not a 2xx null body.
+    me: () => request<Subscription>(API_PATHS.subscriptionsMe),
     cancel: () => request<void>(API_PATHS.subscriptionsMe, { method: 'DELETE' }),
   };
 }

@@ -8,6 +8,7 @@ import { createNotificationsResource } from './resources/notifications';
 import { createPlansResource } from './resources/plans';
 import { createProjectsResource } from './resources/projects';
 import { createSubscriptionsResource } from './resources/subscriptions';
+import { createUploadsResource } from './resources/uploads';
 import { createZonesResource } from './resources/zones';
 
 export { ApiError };
@@ -28,6 +29,7 @@ export function createApiClient(options: ApiClientOptions) {
     subscriptions: createSubscriptionsResource(request),
     dashboard: createDashboardResource(request),
     notifications: createNotificationsResource(request),
+    uploads: createUploadsResource(request),
     admin: createAdminResource(request),
   };
 }
