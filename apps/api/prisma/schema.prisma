@@ -178,7 +178,10 @@ model Project {
 }
 
 model ProjectUpdate {
-  id          String   @id // stable seed id, e.g. "<slug>-update-1", not a cuid default
+  // The seed still passes its own stable ids explicitly (e.g. "<slug>-update-1")
+  // so it stays idempotent; the default only kicks in for updates published
+  // through POST /v1/projects/:id/updates, which has no natural id to use.
+  id          String   @id @default(cuid())
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title       String
