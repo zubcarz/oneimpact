@@ -34,7 +34,15 @@ describe('Admin metrics (e2e)', () => {
   });
 
   afterAll(async () => {
-    await prisma.user.deleteMany({ where: { email: { endsWith: `@${E2E_EMAIL_DOMAIN}` } } });
+    // Payment and Subscription do not cascade from User (schema.prisma), so
+    // both are deleted explicitly first -- same FK-safe order as
+    // `subscriptions-flow.e2e-spec.ts` and `outbox.e2e-spec.ts`. This file
+    // never creates a subscription itself, but its broad domain-wide delete
+    // can otherwise collide with a disposable user another spec left behind.
+    const disposableUser = { email: { endsWith: `@${E2E_EMAIL_DOMAIN}` } };
+    await prisma.payment.deleteMany({ where: { user: disposableUser } });
+    await prisma.subscription.deleteMany({ where: { user: disposableUser } });
+    await prisma.user.deleteMany({ where: disposableUser });
     await prisma.$disconnect();
   });
 

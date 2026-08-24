@@ -40,8 +40,15 @@ describe('Auth (e2e)', () => {
     // Cleanup: every user these specs created lives under E2E_EMAIL_DOMAIN,
     // so this never touches the two seeded accounts (admin@/ana@oneimpact.org)
     // that `test/seed.e2e-spec.ts` counts on being exactly 2. RefreshToken
-    // rows for these users cascade-delete (schema.prisma: onDelete: Cascade).
-    await prisma.user.deleteMany({ where: { email: { endsWith: `@${E2E_EMAIL_DOMAIN}` } } });
+    // rows for these users cascade-delete (schema.prisma: onDelete: Cascade),
+    // but Payment and Subscription do not, so both are deleted explicitly
+    // first -- same FK-safe order as `subscriptions-flow.e2e-spec.ts` and
+    // `outbox.e2e-spec.ts` -- in case another spec left a disposable
+    // subscribed user behind under this domain.
+    const disposableUser = { email: { endsWith: `@${E2E_EMAIL_DOMAIN}` } };
+    await prisma.payment.deleteMany({ where: { user: disposableUser } });
+    await prisma.subscription.deleteMany({ where: { user: disposableUser } });
+    await prisma.user.deleteMany({ where: disposableUser });
     await prisma.$disconnect();
   });
 
