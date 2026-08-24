@@ -47,3 +47,9 @@ export type { PlanSelectorProps } from './PlanSelector';
 
 export { BenefitItem } from './BenefitItem';
 export type { BenefitItemProps } from './BenefitItem';
+
+export { UpdateTimeline } from './UpdateTimeline';
+export type { UpdateTimelineProps } from './UpdateTimeline';
+
+export { FollowButton } from './FollowButton';
+export type { FollowButtonProps } from './FollowButton';
