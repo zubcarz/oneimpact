@@ -1,37 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
 import { DomainEvent } from './domain-event';
+import { OutboxRepository } from './outbox.repository';
 
 /**
  * Single entry point every module uses to publish a `DomainEvent`. The
- * signature `publish(event, tx?)` is DEFINITIVE and must not change:
+ * signature `publish(event, tx?)` is DEFINITIVE and must not change.
  *
- * - TODAY (this task, item 12 not done yet): `publish` just forwards the
- *   event to the in-process `EventEmitter2` via `emitAsync(event.type, event)`
- *   and IGNORES `tx`. There is no outbox table yet, so there is nothing to
- *   write inside a transaction.
- * - `tx` is accepted (and typed as `Prisma.TransactionClient`) even though it
- *   is unused today so that callers can already pass their transaction
- *   client at the call site (e.g. `this.eventBus.publish(event, tx)` right
- *   after a Prisma write inside `tx.$transaction(...)`). Item 12 replaces the
- *   body of this method with an `INSERT` into `OutboxEvent` using that same
- *   `tx`, in the same transaction as the state change, and an `OutboxRelay`
- *   (`@Interval`) delivers it to `@OnEvent` listeners afterwards. Modules that
- *   call `publish` today do not need to change anything when that lands --
- *   only this method's body does.
+ * `publish` inserts the event into the `OutboxEvent` table -- inside the
+ * caller's transaction when `tx` is passed (so the state change and the
+ * outbox row commit or roll back together), or as its own write when it is
+ * not. It never delivers the event itself: `OutboxRelay` polls `OutboxEvent`
+ * on an interval and delivers unprocessed rows to `@OnEvent` listeners via
+ * `EventEmitter2`, retrying failed deliveries up to `OUTBOX_MAX_ATTEMPTS`
+ * (`infra/config/env.ts`). Callers that pass `tx` right after a Prisma write
+ * inside `tx.$transaction(...)` (e.g.
+ * `this.eventBus.publish(event, tx)`) do not need to change anything: this
+ * class is the only place the outbox mechanics live.
  */
 @Injectable()
 export class EventBus {
-  constructor(private readonly emitter: EventEmitter2) {}
+  constructor(private readonly outbox: OutboxRepository) {}
 
   async publish<TType extends string, TPayload>(
     event: DomainEvent<TType, TPayload>,
     tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    // `tx` is intentionally unused until item 12 (outbox) reads it. Kept as a
-    // no-op reference instead of an eslint-disable, see class doc above.
-    void tx;
-    await this.emitter.emitAsync(event.type, event);
+    await this.outbox.insert(event, tx);
   }
 }
