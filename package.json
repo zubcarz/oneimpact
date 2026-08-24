@@ -25,5 +25,11 @@
     "prettier": "^3.3.3",
     "turbo": "^2.10.11",
     "typescript": "^5.7.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.3",
+      "react-dom": "19.2.3"
+    }
   }
 }
