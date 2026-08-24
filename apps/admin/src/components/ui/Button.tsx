@@ -44,10 +44,34 @@ const SIZES: Record<ButtonSize, string> = {
  */
 const VARIANTS: Record<ButtonVariant, string> = {
   accent: 'bg-accent text-gray-900 hover:bg-accent-dark focus-visible:outline-dark-green',
-  white: 'border border-black/10 bg-white text-gray-900 hover:bg-gray-100 focus-visible:outline-dark-green',
+  white:
+    'border border-black/10 bg-white text-gray-900 hover:bg-gray-100 focus-visible:outline-dark-green',
   dark: 'bg-gray-900 text-white hover:bg-gray-800 focus-visible:outline-accent',
   ink: 'border border-white/20 bg-ink text-white hover:bg-gray-800 focus-visible:outline-accent',
 };
+
+/**
+ * The classes of a button, without the `<button>`.
+ *
+ * It exists for the links that act as an action of a page ("Nuevo proyecto",
+ * "Avances"): those have to stay `<a>` so they navigate, open in a new tab and
+ * are announced as links, but they have to look like the rest of the buttons.
+ * Copying the variants into each page would let them drift apart the first time
+ * a colour changes.
+ */
+export function buttonClassName({
+  variant = 'accent',
+  size = 'md',
+  fullWidth = false,
+  className,
+}: {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  fullWidth?: boolean;
+  className?: string;
+} = {}): string {
+  return cn(BASE, SIZES[size], VARIANTS[variant], fullWidth && 'w-full', className);
+}
 
 export function Button({
   variant = 'accent',
@@ -62,7 +86,7 @@ export function Button({
       // A `<button>` with no `type` inside a form defaults to `submit` and sends
       // it on the first click. Submitting has to be asked for explicitly.
       type={type ?? 'button'}
-      className={cn(BASE, SIZES[size], VARIANTS[variant], fullWidth && 'w-full', className)}
+      className={buttonClassName({ variant, size, fullWidth, className })}
       {...props}
     />
   );

@@ -1,8 +1,10 @@
 import { ApiError } from '@oneimpact/api-client';
 import type { ProjectsListParams } from '@oneimpact/api-client';
 import type { Project, Zone } from '@oneimpact/shared';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { buttonClassName } from '@/components/ui/Button';
 import { ProjectsFilters } from '@/features/projects/ProjectsFilters';
 import { ProjectsTable } from '@/features/projects/ProjectsTable';
 import { parseProjectsFilters, type RawSearchParams } from '@/features/projects/filters';
@@ -65,6 +67,14 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       <PageHeader
         title="Proyectos"
         description="Estado y progreso de los proyectos de restauración. Filtra por zona o por estado."
+        actions={
+          // A link and not a `Button`: it navigates, so it has to be an `<a>` to
+          // be announced as a link and to open in a new tab if asked. The look
+          // comes from `buttonClassName`, shared with the real buttons.
+          <Link href="/projects/new" className={buttonClassName()}>
+            Nuevo proyecto
+          </Link>
+        }
       />
       <ProjectsFilters zones={zones} filters={filters} />
       <ProjectsTable projects={projects} zones={zones} hasActiveFilters={hasActiveFilters} />

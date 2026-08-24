@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
+import { QueryProvider } from '@/lib/query-provider';
 import { readSession } from '@/lib/session';
 
 /**
@@ -36,7 +37,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar email={session.email} />
-        <main className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-10">{children}</main>
+        {/*
+          The provider wraps only the content, not the shell: `Sidebar` and
+          `Topbar` fetch nothing, and leaving them outside keeps the boundary of
+          the client tree where the data actually is. This layout stays a Server
+          Component -- `QueryProvider` is the one carrying `'use client'`.
+        */}
+        <main className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-10">
+          <QueryProvider>{children}</QueryProvider>
+        </main>
       </div>
     </div>
   );
