@@ -34,16 +34,6 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: (...args: unknown[]) => mockSelectionAsync(...args),
 }));
 
-jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
-  const animationBuilder = { duration: () => animationBuilder };
-  return {
-    __esModule: true,
-    default: { View },
-    FadeIn: animationBuilder,
-  };
-});
-
 describe('Testimonials', () => {
   beforeEach(() => {
     mockSelectionAsync.mockClear();

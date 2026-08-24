@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { router } from 'expo-router';
 import type { Billing, PlanId } from '@oneimpact/shared';
 import { Header, FullScreenMenu, Screen } from '@/components/layout';
 import {
@@ -14,9 +14,10 @@ export default function SubscriptionScreen() {
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('estandar');
 
   const handleCtaPress = () => {
-    // TODO(item 09): navegar a `/(auth)/register?plan=<id>&billing=<billing>`
-    // cuando esa ruta exista. Por ahora `/(auth)/register` no esta creada.
-    Alert.alert('Proximamente', 'El registro estara disponible muy pronto.');
+    router.push({
+      pathname: '/(auth)/register',
+      params: { plan: selectedPlan, billing },
+    });
   };
 
   return (
