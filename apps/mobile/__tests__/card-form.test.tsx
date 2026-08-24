@@ -25,6 +25,12 @@ jest.mock('lucide-react-native', () => {
 const VALID_PAN = '4242 4242 4242 4242';
 // Same Luhn-valid prefix with the last digit flipped so it fails the checksum.
 const INVALID_PAN = '4242 4242 4242 4241';
+/**
+ * The first 15 digits of `VALID_PAN`. It is Luhn-VALID -- `isValidLuhn` checks
+ * the check digit, not the length -- which is exactly why the CTA used to let
+ * it through and the payment would have been recorded with `last4: "2424"`.
+ */
+const INCOMPLETE_PAN = '4242 4242 4242 424';
 
 function renderCardForm(overrides: Partial<CardFormProps> = {}) {
   return render(
@@ -39,10 +45,10 @@ function renderCardForm(overrides: Partial<CardFormProps> = {}) {
   );
 }
 
-function fillForm(pan: string) {
+function fillForm(pan: string, expiry = '1229') {
   fireEvent.changeText(screen.getByLabelText('Numero de tarjeta'), pan);
   fireEvent.changeText(screen.getByLabelText('Titular'), 'Ana Reciente');
-  fireEvent.changeText(screen.getByLabelText('Vencimiento (MM/AA)'), '1229');
+  fireEvent.changeText(screen.getByLabelText('Vencimiento (MM/AA)'), expiry);
   fireEvent.changeText(screen.getByLabelText('CVC'), '123');
 }
 
@@ -59,8 +65,47 @@ describe('CardForm', () => {
     fillForm(INVALID_PAN);
     fireEvent.press(submitButton());
 
-    expect(await screen.findByText('Numero de tarjeta invalido')).toBeTruthy();
+    expect(await screen.findByText('Número de tarjeta inválido')).toBeTruthy();
     expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('blocks a Luhn-valid but incomplete PAN, which would be recorded with the wrong last4', async () => {
+    renderCardForm();
+
+    fillForm(INCOMPLETE_PAN);
+    fireEvent.press(submitButton());
+
+    expect(await screen.findByText('El número debe tener 16 dígitos')).toBeTruthy();
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('blocks an expiry year below the schema bound instead of letting the API answer 400', async () => {
+    renderCardForm();
+
+    // "12/01" -> 2001, under `simulatedCardSchema`'s `expYear >= 2024`. Sending
+    // it makes the zod pipe answer 400, and a 400 carries no domain `code`, so
+    // the screen could only show a generic error for what is really one bad
+    // field.
+    fillForm(VALID_PAN, '1201');
+    fireEvent.press(submitButton());
+
+    expect(await screen.findByText('Vencimiento inválido')).toBeTruthy();
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('still sends an expiry that is past but within the schema bound, so the simulator can decline it', async () => {
+    renderCardForm();
+
+    // "01/25" is expired, but it is a VALID payload: the simulator is meant to
+    // answer 402 CARD_EXPIRED for it. Blocking it here would delete one of the
+    // two decline cases the demo exists to show.
+    fillForm(VALID_PAN, '0125');
+    fireEvent.press(submitButton());
+
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+
+    const payload = mockMutate.mock.calls[0][0] as { card: { expYear: number } };
+    expect(payload.card.expYear).toBe(2025);
   });
 
   it('sends a payload whose card object has exactly {brand,last4,holder,expMonth,expYear} -- never number, pan or cvc', async () => {
