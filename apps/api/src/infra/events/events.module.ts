@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { OutboxAdminController } from './controllers/outbox-admin.controller';
 import { EventBus } from './event-bus';
 import { OutboxFaultInjector } from './outbox-fault-injector';
 import { OutboxRepository } from './outbox.repository';
@@ -19,9 +20,15 @@ import { OutboxRelay } from './outbox.relay';
  * Wired into `AppModule` (`app.module.ts`): `PrismaModule` is also `@Global`,
  * so `OutboxRepository` resolves `PrismaService` without this module
  * importing `PrismaModule` explicitly.
+ *
+ * `OutboxAdminController` (`GET /v1/admin/outbox`) lives here rather than in
+ * `impact` -- decision D3 of
+ * `.claude/plans/20260824-api-dashboard-metrics-and-outbox.plan.md`: the
+ * outbox is a delivery-infrastructure concern, not a business domain.
  */
 @Global()
 @Module({
+  controllers: [OutboxAdminController],
   providers: [EventBus, OutboxRepository, OutboxRelay, OutboxFaultInjector],
   exports: [EventBus, OutboxRepository, OutboxRelay, OutboxFaultInjector],
 })

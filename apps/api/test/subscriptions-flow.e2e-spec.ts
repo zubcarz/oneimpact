@@ -10,6 +10,11 @@
 // is loaded -- so this assignment only takes effect if it runs before that
 // `import` line below. See `subscriptions.e2e-spec.ts` for the full reasoning.
 process.env.PAYMENT_SIMULATION_DELAY_MS = '0';
+// Fast relay tick so the `waitFor(...)` polls below (see hallazgo 5 of
+// `.claude/plans/20260824-api-dashboard-metrics-and-outbox.plan.md`) settle
+// quickly: outbox delivery is asynchronous now, no longer inline with
+// `EventBus.publish`.
+process.env.OUTBOX_RELAY_INTERVAL_MS = '20';
 
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
@@ -19,6 +24,7 @@ import type { DashboardSummary, NotificationItem, Project } from '@oneimpact/sha
 import { createTestApp } from './utils/create-test-app';
 import { seedOnce } from './utils/seed-once';
 import { E2E_EMAIL_DOMAIN, bearer, loginAs, registerTestUser } from './utils/auth-helpers';
+import { waitFor } from './utils/wait-for';
 
 jest.setTimeout(60000);
 
@@ -145,24 +151,31 @@ describe('Subscriptions -- payments/subscriptions/impact/notifications flow (e2e
       .send(createSubscriptionBody())
       .expect(201);
 
-    const dashboardResponse = await request(app.getHttpServer())
-      .get('/v1/dashboard/me')
-      .set('Authorization', bearer(user.accessToken))
-      .expect(200);
-    const dashboard = dashboardResponse.body as DashboardSummary;
-    expect(dashboard.plan?.id).toBe('estandar');
-    expect(dashboard.status).toBe('ACTIVE');
-    expect(dashboard.journeyPoints).toBe(1);
+    // Outbox delivery is asynchronous (relay tick, not inline with
+    // `EventBus.publish`): poll until the listeners have caught up instead
+    // of asserting immediately after the `POST` responds.
+    await waitFor(async () => {
+      const dashboardResponse = await request(app.getHttpServer())
+        .get('/v1/dashboard/me')
+        .set('Authorization', bearer(user.accessToken))
+        .expect(200);
+      const dashboard = dashboardResponse.body as DashboardSummary;
+      expect(dashboard.plan?.id).toBe('estandar');
+      expect(dashboard.status).toBe('ACTIVE');
+      expect(dashboard.journeyPoints).toBe(1);
+    });
 
-    const notificationsResponse = await request(app.getHttpServer())
-      .get('/v1/notifications/me')
-      .set('Authorization', bearer(user.accessToken))
-      .expect(200);
-    const notifications = notificationsResponse.body as NotificationsListBody;
-    expect(notifications.total).toBe(2);
-    expect(notifications.items.map((item) => item.type).sort()).toEqual(
-      ['SUBSCRIPTION', 'WELCOME'].sort(),
-    );
+    await waitFor(async () => {
+      const notificationsResponse = await request(app.getHttpServer())
+        .get('/v1/notifications/me')
+        .set('Authorization', bearer(user.accessToken))
+        .expect(200);
+      const notifications = notificationsResponse.body as NotificationsListBody;
+      expect(notifications.total).toBe(2);
+      expect(notifications.items.map((item) => item.type).sort()).toEqual(
+        ['SUBSCRIPTION', 'WELCOME'].sort(),
+      );
+    });
   });
 
   it('declines a card ending in 0000 with 402 and leaves no subscription and no journey point behind', async () => {
@@ -235,12 +248,14 @@ describe('Subscriptions -- payments/subscriptions/impact/notifications flow (e2e
       .send(publishUpdateBody())
       .expect(201);
 
-    const notificationsResponse = await request(app.getHttpServer())
-      .get('/v1/notifications/me')
-      .set('Authorization', bearer(follower.accessToken))
-      .expect(200);
-    const notifications = notificationsResponse.body as NotificationsListBody;
-    expect(notifications.items.some((item) => item.type === 'PROJECT_UPDATE')).toBe(true);
+    await waitFor(async () => {
+      const notificationsResponse = await request(app.getHttpServer())
+        .get('/v1/notifications/me')
+        .set('Authorization', bearer(follower.accessToken))
+        .expect(200);
+      const notifications = notificationsResponse.body as NotificationsListBody;
+      expect(notifications.items.some((item) => item.type === 'PROJECT_UPDATE')).toBe(true);
+    });
   });
 
   it('rejects a USER attempting to create a project with 403', async () => {

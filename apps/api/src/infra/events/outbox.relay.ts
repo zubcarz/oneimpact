@@ -25,6 +25,14 @@ export class OutboxRelay implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(OutboxRelay.name);
   private intervalHandle: ReturnType<typeof setInterval> | undefined;
   private running = false;
+  // Tracks the currently in-flight `tick()` promise, so `onModuleDestroy` can
+  // await it before returning. Without this, a tick that is mid-flight
+  // (awaiting a Prisma query) when `app.close()` runs keeps executing after
+  // `PrismaService.onModuleDestroy` has already called `$disconnect()`,
+  // surfacing as "Engine is not yet connected" in e2e specs that use a fast
+  // `OUTBOX_RELAY_INTERVAL_MS` (found while adding e2e coverage in
+  // `.claude/plans/20260824-api-dashboard-metrics-and-outbox.plan.md`, Fase 3).
+  private currentTick: Promise<void> | undefined;
 
   constructor(
     private readonly repository: OutboxRepository,
@@ -36,15 +44,23 @@ export class OutboxRelay implements OnModuleInit, OnModuleDestroy {
   onModuleInit(): void {
     const intervalMs = this.config.get<number>('OUTBOX_RELAY_INTERVAL_MS', DEFAULT_INTERVAL_MS);
     this.intervalHandle = setInterval(() => {
-      void this.tick();
+      // `tick()` itself is a no-op (returns immediately) while a previous
+      // call is still running (`this.running`), so only reassign
+      // `currentTick` when it is genuinely about to do work -- otherwise a
+      // no-op call's already-resolved promise would overwrite the reference
+      // to the tick that is actually still in flight.
+      if (!this.running) {
+        this.currentTick = this.tick();
+      }
     }, intervalMs);
   }
 
-  onModuleDestroy(): void {
+  async onModuleDestroy(): Promise<void> {
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
       this.intervalHandle = undefined;
     }
+    await this.currentTick;
   }
 
   /**

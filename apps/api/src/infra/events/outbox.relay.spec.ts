@@ -79,7 +79,7 @@ describe('OutboxRelay', () => {
     expect(repository.markProcessed).toHaveBeenCalledWith('outbox-1');
     expect(repository.markFailedAttempt).not.toHaveBeenCalled();
 
-    relay.onModuleDestroy();
+    await relay.onModuleDestroy();
   });
 
   it('records a failed delivery via markFailedAttempt and never marks it processed', async () => {
@@ -93,7 +93,7 @@ describe('OutboxRelay', () => {
     expect(repository.markFailedAttempt).toHaveBeenCalledWith('outbox-1', 'listener exploded');
     expect(repository.markProcessed).not.toHaveBeenCalled();
 
-    relay.onModuleDestroy();
+    await relay.onModuleDestroy();
   });
 
   it('forces a failure through OutboxFaultInjector without ever calling the real emitter', async () => {
@@ -111,7 +111,7 @@ describe('OutboxRelay', () => {
     );
     expect(repository.markProcessed).not.toHaveBeenCalled();
 
-    relay.onModuleDestroy();
+    await relay.onModuleDestroy();
   });
 
   it('stops polling after onModuleDestroy: advancing the clock no longer triggers ticks', async () => {
@@ -122,7 +122,7 @@ describe('OutboxRelay', () => {
     await jest.advanceTimersByTimeAsync(INTERVAL_MS);
     expect(repository.findPendingBatch).toHaveBeenCalledTimes(1);
 
-    relay.onModuleDestroy();
+    await relay.onModuleDestroy();
     await jest.advanceTimersByTimeAsync(INTERVAL_MS * 3);
 
     expect(repository.findPendingBatch).toHaveBeenCalledTimes(1);

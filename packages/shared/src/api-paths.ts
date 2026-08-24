@@ -31,6 +31,7 @@ export const API_PATHS = {
   },
   admin: {
     metrics: '/v1/admin/metrics',
+    outbox: '/v1/admin/outbox',
     users: '/v1/admin/users',
     userRole: (id: string) => `/v1/admin/users/${id}/role`,
   },
