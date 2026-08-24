@@ -13,7 +13,7 @@ import {
 import { Button, CardPreview, Input } from '@/components/ui';
 import { useCreateSubscription } from '@/api/hooks';
 import { apiErrorCode } from './auth-errors';
-import { formatExpiry, formatPan, parseExpiry } from './card-format';
+import { formatExpiry, formatPan, isCompletePan, parseExpiry } from './card-format';
 import { PaymentDeclinedBanner } from './PaymentDeclinedBanner';
 
 export interface CardFormProps {
@@ -36,7 +36,10 @@ interface CardFormValues {
 }
 
 const DEFAULT_VALUES: CardFormValues = { pan: '', holder: '', expiry: '', cvc: '' };
-const GENERIC_PAYMENT_ERROR = 'No se pudo procesar el pago. Intentalo de nuevo.';
+const GENERIC_PAYMENT_ERROR = 'No se pudo procesar el pago. Inténtalo de nuevo.';
+
+/** Copy del 400 de validacion: distinto del rechazo, y accionable. */
+const INVALID_CARD_DATA_ERROR = 'Revisa los datos de la tarjeta e inténtalo de nuevo.';
 
 /**
  * Form de Pago simulado (`pantallas-nuevas.md:29-33`). Es el unico lugar del
@@ -84,6 +87,7 @@ export function CardForm({
   // verdadero gate contra el envio sigue siendo la validacion de
   // `handleSubmit` de mas abajo; esto solo decide si el CTA se ve habilitado.
   const canSubmit =
+    isCompletePan(watchedPan) &&
     isValidLuhn(watchedPan) &&
     watchedHolder.trim().length >= 2 &&
     parseExpiry(watchedExpiry) !== null &&
@@ -127,6 +131,16 @@ export function CardForm({
           onSessionExpired();
           return;
         }
+        // Un 400 es la validacion de `simulatedCardSchema` en el servidor, o
+        // sea un dato mal formado que este formulario dejo pasar -- no un
+        // rechazo del pago. Sale por el pipe de zod, no por `DomainErrorFilter`,
+        // asi que no trae `code` y sin este caso quedaba indistinguible de un
+        // rechazo real. Mandar a revisar la tarjeta es accionable; "intentalo
+        // de nuevo" invita a repetir el mismo error.
+        if (error instanceof ApiError && error.status === 400) {
+          setDeclinedMessage(INVALID_CARD_DATA_ERROR);
+          return;
+        }
         setDeclinedMessage(GENERIC_PAYMENT_ERROR);
       },
     });
@@ -146,7 +160,15 @@ export function CardForm({
         <Controller
           control={control}
           name="pan"
-          rules={{ validate: (value) => isValidLuhn(value) || 'Numero de tarjeta invalido' }}
+          rules={{
+            validate: (value) => {
+              // Incompleto y invalido son errores distintos y se dicen distinto:
+              // "invalido" delante de una tarjeta a la que solo le falta un
+              // digito manda a revisar los que ya estan bien.
+              if (!isCompletePan(value)) return 'El número debe tener 16 dígitos';
+              return isValidLuhn(value) || 'Número de tarjeta inválido';
+            },
+          }}
           render={({ field: { value, onChange } }) => (
             <Input
               label="Numero de tarjeta"
@@ -183,7 +205,9 @@ export function CardForm({
             <Controller
               control={control}
               name="expiry"
-              rules={{ validate: (value) => parseExpiry(value) !== null || 'Formato invalido' }}
+              rules={{
+                validate: (value) => parseExpiry(value) !== null || 'Vencimiento inválido',
+              }}
               render={({ field: { value, onChange } }) => (
                 <Input
                   label="Vencimiento (MM/AA)"
