@@ -1158,3 +1158,126 @@ Subscription_userId_fkey`. Se corrigio replicando en los tres archivos el
   `apps/mobile/jest.setup.js` (`jest is not defined`, falta `env: jest` en la
   config de eslint) y `apps/api/prisma/seed.ts` (formato `prettier`). No se
   tocaron.
+
+## 2026-08-24 -- README de entrega, entrada de login en el menu y recuperacion de un merge fallido [release-readme-and-session-menu]
+
+**Pedido**: dos pedidos encadenados el dia de entrega (lunes 24, plazo
+18:00). Primero, mobile: desde Inicio solo se podia llegar a loguearse
+pasando por "Como aportar" -> registro, y faltaba una pantalla de carga de
+marca al abrir la app (el asset de splash seguia siendo el placeholder de la
+plantilla de Expo). Despues, completar `README.md` "como un desarrollador
+senior" cumpliendo lo que pide el correo de la prueba tecnica (instalacion,
+flujo de Git normal, como se integro la IA) **sin GIF**, mas un borrador de
+respuesta al correo que tampoco lo mencionara. Mas tarde en el dia, el
+usuario aviso que habia commiteado ese trabajo por error en una rama
+(`fix/mobile-card-expiry-and-session-menu`) que debia ir a `main`.
+
+**Herramientas**: sesion interactiva de Claude Code, sin comando de plan
+(cambios puntuales, no un item del roadmap). Lectura de
+`pantallas-nuevas.md` (spec de Login) y `arquitectura-mobile.md` para el
+splash; `sharp` via Node para rasterizar `logo_blanco.svg` a
+`assets/splash-icon.png`; `gh repo view` / `gh pr list` para confirmar que el
+repo es publico y que el flujo de Git es de ramas + merge, no PRs.
+
+**Entrego**:
+
+- Login accesible desde el menu principal: `FullScreenMenu` gano un enlace
+  "¿Ya tienes cuenta? Inicia sesión" (visible solo en `guest`, usa
+  `loginHref()` de `@/auth`), con dos tests nuevos (aparece y navega para un
+  invitado; no aparece con sesion). Antes, el unico camino a `/(auth)/login`
+  era el enlace enterrado dentro de `RegisterForm`.
+- Splash de marca: `apps/mobile/assets/splash-icon.png` paso del placeholder
+  de circulos concentricos de la plantilla de Expo al logo real de One
+  Impact en blanco (renderizado desde `logo_blanco.svg` con `sharp`, 1536x598),
+  sobre el `backgroundColor` forest (`#0f1a0a`) que `app.json` ya declaraba.
+  El mecanismo de mostrar/ocultar (`expo-splash-screen`, `app/_layout.tsx`)
+  ya existia; solo faltaba el asset de marca.
+- `README.md` reescrito: stack, estructura, una tabla honesta de "que esta
+  implementado" (incluida la fila explicita de que `admin` dashboard/users/
+  subscriptions son placeholder y que no hay deploy productivo), setup/run/
+  quality, flujo de Git, y una seccion "AI-assisted development" con cuatro
+  ejemplos concretos sacados de este mismo log (el plan corregido por el
+  propio agente en `api-payments-subscriptions-events`, el `.strict()` del
+  PAN, el `jti` del refresh token, el falso negativo del verifier). Sin
+  seccion de GIF, por pedido explicito.
+- `.claude/roadmap/ROADMAP.md` corregido: la tabla de Estado marcaba los
+  items 10 (`mobile-dashboard-and-profile`) y 12
+  (`api-dashboard-metrics-and-outbox`) como "pendiente" pese a estar
+  mergeados a `main` desde la sesion anterior (`876ce6f`, `3f6853a`); se
+  actualizaron con sus rangos de commits reales.
+- Borrador de respuesta al correo de la prueba tecnica con el link del repo,
+  un resumen de alcance y de como se uso la IA, y el flujo de Git -- sin
+  mencionar el GIF, tal como pidio el usuario.
+- **Recuperacion del merge**: el trabajo de arriba, mas dos commits ajenos a
+  esta sesion hechos en paralelo por el usuario/otra sesion sobre la misma
+  rama (`e31ca89`, `fix(mobile): reject card data the API would answer 400
+to`, y `a45572b`, `feat(mobile): surface the session in the main menu`),
+  habian quedado commiteados en `fix/mobile-card-expiry-and-session-menu`
+  sin mergear -- `main` no tenia ninguno. Se revisaron los tres commits con
+  `git show` antes de tocar nada (ver detalle abajo), se mergeo la rama a
+  `main` con `--no-ff` (fast-forward limpio: `main` no tenia commits propios
+  desde la base comun) y se pusheo (`3543e29..245de30`).
+
+**Que traian los otros dos commits** (no son de esta sesion, se documentan
+aca porque entraron en el mismo merge y el usuario pidio dejar constancia):
+
+- `e31ca89`: un vencimiento `12/01` se leia como año 2001 (`2000 + AA`), por
+  debajo del `expYear >= 2024` de `simulatedCardSchema`; la API respondia
+  **400** desde el pipe de zod, que no pasa por `DomainErrorFilter` y por
+  eso no trae `code` -- la pantalla caia al mensaje generico sin decir que
+  campo estaba mal. `parseExpiry` (`card-format.ts`) ahora rechaza el año
+  fuera de rango, con la distincion documentada y testeada en ambos
+  sentidos: un año pasado pero `>= 2024` sigue siendo un payload valido que
+  el simulador rechaza aparte con 402 `CARD_EXPIRED` (uno de los dos casos
+  de rechazo que la demo existe para mostrar). Segundo hallazgo, mas grave:
+  el CTA solo exigia Luhn valido, y Luhn verifica el digito de control, no
+  la longitud -- `4242 4242 4242 424` (15 digitos) pasaba. Como el servidor
+  nunca ve el PAN, tampoco lo habria detectado: el pago se habria guardado
+  con `last4: "2424"` en vez de `"4242"`, un registro financiero incorrecto
+  sin vuelta atras. `isCompletePan` (16 digitos) ahora gatea el CTA junto a
+  Luhn. 3 tests nuevos en `card-form.test.tsx` (3 -> 6).
+- `a45572b`: construye sobre el enlace de login que dejo esta sesion.
+  Logout vivia solo dentro de `(app)/profile` -> `ProfileMenu`, inalcanzable
+  para un invitado y, para un usuario logueado, a dos toques de distancia
+  (menu -> "Mi dashboard" -> tab Perfil); no habia forma de cerrar sesion
+  desde ninguna pantalla publica. El menu ahora muestra quien esta logueado
+  (nombre y email) y convierte login/logout en botones full-width en el
+  mismo lugar. El detalle con test propio: `handleSignOut` navega a Inicio
+  **antes** de limpiar la sesion, porque al reves `useRequireAuth` ve
+  `status` pasar a `guest` con una pantalla de `(app)` todavia montada y
+  hace `replace` al login -- cerrar sesion terminaria en un formulario de
+  login.
+
+**Revision**: los tres commits se leyeron con `git show` antes de mergear
+(no se confio en el mensaje de commit solo). Tras el merge: `tsc --noEmit`
+limpio, `pnpm --filter @oneimpact/mobile test` **128/128** verde (31
+suites), `npx expo export --platform android` bundlea sin errores. No se
+corrio `--scope all` completo (api/admin no cambiaron en este merge).
+
+**Ajustes manuales**: ninguno sobre el codigo de los otros dos commits --
+se revisaron y se aceptaron tal cual, con evidencia (diff completo, no solo
+el resumen del mensaje). El unico ajuste de esta sesion fue de proceso: la
+mezcla accidental de tres commits no relacionados (mobile, docs, y un plan
+de 859 lineas sin trackear) en una sola rama sin mergear se resolvio
+mergeando la rama entera a `main` en vez de tratar de separarla a mano bajo
+presion de plazo -- separar despues, si hace falta, es mas barato que
+reconstruir un merge roto el dia de la entrega.
+
+**Pendiente**:
+
+- **Verificacion visual en Expo Go / navegador, SIN CONFIRMAR**: el menu
+  logueado y sin sesion (que reemplaza el texto), el logout desde una
+  pantalla publica y desde `(app)`, y el splash de marca -- este ultimo con
+  una salvedad conocida: `app.json` lo aplica un plugin nativo en build, asi
+  que corriendo con Expo Go plano se sigue viendo la pantalla de carga
+  generica de Expo Go, no el splash de la app; hace falta un dev build para
+  verlo.
+- El item 13 (`admin-metrics-users-subscriptions`) sigue sin ejecutar: el
+  plan quedo escrito en `.claude/plans/20260824-admin-metrics-users-subscriptions.plan.md`
+  (859 lineas, entro en este mismo merge) pero `admin` dashboard/users/
+  subscriptions siguen siendo placeholders de 8 lineas.
+- El item 14 (`deploy-and-ci`) sigue pendiente: la app corre solo en local: no
+  hay URL productiva. Anotado en el README como estado real, no como
+  promesa.
+- La rama `fix/mobile-card-expiry-and-session-menu` quedo mergeada por
+  completo y no se borro; es segura de eliminar.
