@@ -1,5 +1,6 @@
 # Plan -- Admin: auth con cookie y gestion de proyectos (por fases, checkpoint por fase)
 
+> **Estado**: ejecutado en feat/admin-auth-and-projects (6d83c96..ce681d5)
 > **Fecha**: 2026-08-23
 > **Origen**: Modo R -- spec del roadmap `.claude/roadmap/specs/11-admin-auth-and-projects.md` (item 11, ola 3)
 > **Base**: vault `01-Tecnologia-Arquitectura/admin-web.md`; reglas `.claude/rules/40-admin-conventions.md`, `60-design-system.md`, `50-testing-and-verification.md`; plan previo `.claude/plans/20260822-api-payments-subscriptions-events.plan.md` (decisiones D5a y D6, que condicionan la subida de imagenes)
@@ -839,3 +840,80 @@ docs/ai-workflow.md                     (fase 6, via /ai-log)
 **No se toca**: `packages/**`, `apps/api/**`, `apps/mobile/**`,
 `apps/api/prisma/**`, ni las paginas placeholder de `zones`, `users`,
 `subscriptions` y `dashboard` del admin (son del item 13).
+
+---
+
+## Anexo -- desviaciones de la ejecucion
+
+Registradas al cerrar la fase 6. Todas verificadas contra el codigo o contra los
+docs de Next 16 que viven en `node_modules/next/dist/docs/`.
+
+1. **`middleware.ts` esta deprecado en Next 16.** El archivo se llama `proxy.ts`
+   y exporta `proxy`, no `middleware`
+   (`apps/admin/src/proxy.ts:24`; docs `01-app/03-api-reference/03-file-conventions/middleware.md`
+   y `proxy.md:11`). Donde el plan dice `src/middleware.ts`, leer
+   `apps/admin/src/proxy.ts`.
+2. **El Proxy corre en Node.js, no en el Edge runtime**, y declarar
+   `export const runtime` en ese archivo **lanza error** (`proxy.md:223`). El
+   riesgo que anotaba la fase 1 sobre las limitaciones del Edge runtime
+   desaparece.
+3. **El route handler BFF se llama `/api/gateway`**, no `/api/proxy`
+   (`apps/admin/src/app/api/gateway/[...path]/route.ts`): con el renombre de
+   Next 16, "proxy" ya nombra otra cosa dentro de la app y usarlo para el BFF
+   confundia las dos piezas.
+4. **`z.url()` de zod 4.4.3 acepta `local-simulated://...`** (medido; el plan
+   asumia lo contrario). La decision **D4** no cambia -- se sigue omitiendo
+   `mediaUrl` cuando la subida es simulada -- pero el motivo real es otro: la API
+   guarda el valor verbatim en `mediaKey`, asi que enviarlo persistiria una URL
+   que no resuelve.
+5. **El seed tiene 2 proyectos en `amazonia`, no 1**, y **no hay ningun proyecto
+   en estado `PLANNED`**: son 4 `ACTIVE` + 1 `COMPLETED`. Los asserts de los
+   filtros se escribieron sobre estos numeros, no sobre los del plan.
+6. **`playwright-report/` y `test-results/` nunca estuvieron trackeados**: ya los
+   ignora el `.gitignore` de la raiz, asi que no hizo falta sacarlos del indice.
+   Lo unico agregado a `apps/admin/.gitignore` fue `/e2e/.auth/`, que guarda una
+   cookie de sesion real.
+7. **`apps/admin/.env.example` no existia.** Se creo, y hubo que agregar
+   `!.env.example` a `apps/admin/.gitignore` porque el patron `.env*` lo estaba
+   ignorando.
+8. **D3(b) confirmada**: primitivos de UI propios en vez de shadcn/ui, registrado
+   en `docs/adr/002-admin-ui-primitives.md`.
+9. **`/403` responde HTTP 200**, no 403. En App Router la unica forma de emitir
+   el status es `forbidden()`, que exige `experimental.authInterrupts`, fuera del
+   write-scope del plan. Sin impacto de seguridad: la autorizacion que cuenta la
+   hace la API, que si responde 403 (`apps/admin/src/proxy.ts:22`).
+10. **`/projects/<id-inexistente>` responde 200 (soft 404)** porque el
+    `loading.tsx` del segmento (`apps/admin/src/app/(dashboard)/projects/loading.tsx`)
+    ya arranco el streaming de la respuesta: *"Next.js will return a 200 HTTP
+    status code for streamed responses"* (`not-found.md:13`). La pagina renderiza
+    el estado de no encontrado igual.
+11. **`loginSchema` de `packages/shared` no trae mensajes en espanol**, ni
+    tampoco `progress`, `lat`, `lng` y `status` de `createProjectSchema`. Se
+    resolvio con error maps locales (`apps/admin/src/features/auth/login-messages.ts`,
+    `apps/admin/src/features/projects/project-messages.ts`) **sin tocar
+    `packages/shared`**, como manda el header del plan. Queda como seguimiento
+    del contrato: si mas clientes necesitan los mismos mensajes, el lugar
+    correcto es `shared`, y ese cambio tiene que ir con el `grep` de consumidores
+    en las 3 apps.
+
+### Verificacion al cierre
+
+- `bash scripts/dev/quality-check.sh --scope all --only typecheck,lint,unit`:
+  **GREEN** en los 6 scopes (shared 44 tests, ui-tokens 0, api-client 7, api 120,
+  mobile 83, admin 159).
+- `apps/admin` e2e (Playwright): **5/5 verdes**, tanto contra `next dev` como
+  contra `next start` (build de produccion, que es lo que usa CI).
+- `apps/mobile` bundle (`expo export`): **[OK]**.
+- `apps/api` e2e: **[FAIL] en local**, por dos causas ajenas al codigo del admin.
+  (a) El e2e del admin **escribe** en la base de desarrollo compartida y los e2e
+  de la API afirman conteos exactos (`toBe(5)` recibio 9/10). En CI no puede
+  pasar: `api-e2e` y `admin-e2e` son jobs separados, cada uno con su propio
+  service `postgres:16-alpine`. (b) `apps/api/test/jest-e2e.json` no carga dotenv
+  y `apps/api/test/seed.e2e-spec.ts` instancia `PrismaClient` fuera de Nest, asi
+  que en local hace falta `DATABASE_URL` exportada en el shell; preexistente y
+  ajeno a este plan (en CI el job la define). Limpieza local: reset de la base +
+  `pnpm --filter @oneimpact/api db:setup`.
+- El job `admin-e2e` de CI queda `SIN CONFIRMAR`: no se puede validar hasta que
+  haya un push con un run verde en GitHub.
+- `SIN CONFIRMAR`: verificacion visual en navegador. Solo se comprobo el HTML
+  servido, `curl` y los specs de Playwright.

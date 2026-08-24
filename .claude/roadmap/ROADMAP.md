@@ -134,11 +134,25 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 | 08  | mobile-projects-and-about         | pendiente |                                                                |
 | 09  | mobile-register-payment-welcome   | pendiente |                                                                |
 | 10  | mobile-dashboard-and-profile      | pendiente |                                                                |
-| 11  | admin-auth-and-projects           | pendiente |                                                                |
+| 11  | admin-auth-and-projects           | hecho     | `6d83c96..ce681d5` en `feat/admin-auth-and-projects`, sin mergear |
 | 12  | api-dashboard-metrics-and-outbox  | pendiente |                                                                |
 | 13  | admin-metrics-users-subscriptions | pendiente |                                                                |
 | 14  | deploy-and-ci                     | pendiente |                                                                |
 | 15  | release-readme-gif                | pendiente |                                                                |
+
+**Sobre el 11**: las 6 fases del plan
+`.claude/plans/20260823-admin-auth-and-projects.plan.md` estan ejecutadas en el
+worktree de `feat/admin-auth-and-projects` (login con cookie httpOnly, guarda de
+rol, tabla de proyectos con filtros por zona y estado, alta/edicion, publicacion
+de avances y Playwright). Desviaciones respecto del plan escrito, todas
+verificadas: `middleware.ts` esta deprecado en Next 16, asi que la guarda vive en
+`apps/admin/src/proxy.ts` con export `proxy`, corre en Node.js (no Edge) y el
+route handler BFF se llama `/api/gateway` para no colisionar con ese nombre; los
+primitivos de UI son propios (D3b, `docs/adr/002-admin-ui-primitives.md`);
+`packages/shared` **no** se toco. `apps/admin` e2e da 5/5 verde en local, contra
+`next dev` y contra `next start`. El job `admin-e2e` de CI queda `SIN CONFIRMAR`
+hasta que haya un push con run verde en GitHub. Detalle de todas las
+desviaciones en el anexo del plan y en `docs/local-run-status.md`.
 
 **Sobre el `parcial` del 07**: de las 6 fases de
 `.claude/plans/20260822-mobile-data-layer-and-auth.plan.md` solo entraron a `main`

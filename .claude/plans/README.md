@@ -20,3 +20,4 @@ Ciclo: `/gen-plan` -> `/run-plan-guided | autonomous | worktree` -> `/verify` ->
 | `20260822-mobile-foundation-and-home.plan.md` | mobile | ejecutado en main (`03bf7dd..48c6788`) |
 | `20260822-api-catalog-and-projects.plan.md` | api + shared | ejecutado en `feat/api-catalog-and-projects` (`378cd25..7e849be`) |
 | `20260822-mobile-subscription-screen.plan.md` | mobile | ejecutado en `feat/mobile-subscription-screen` (`bdc84ae..11443dc`) |
+| `20260823-admin-auth-and-projects.plan.md` | admin | ejecutado en `feat/admin-auth-and-projects` (`6d83c96..ce681d5`), pendiente de merge a main |
