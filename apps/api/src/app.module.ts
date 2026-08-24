@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { validateEnv } from './infra/config/env';
 import { EventsModule } from './infra/events/events.module';
+import { LoggingModule } from './infra/logging/logging.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -18,6 +19,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     EventEmitterModule.forRoot({ wildcard: true }),
+    LoggingModule,
     PrismaModule,
     EventsModule,
     HealthModule,
