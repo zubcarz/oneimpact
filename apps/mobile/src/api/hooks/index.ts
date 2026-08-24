@@ -8,3 +8,6 @@ export { useNotifications } from './useNotifications';
 export { useRegister, useLogin } from './useAuthMutations';
 export { useCreateSubscription } from './useCreateSubscription';
 export { useFollowProject } from './useFollowProject';
+export { useSubscription, useCancelSubscription } from './useSubscription';
+export { useMarkNotificationRead } from './useMarkNotificationRead';
+export { usePublishUpdate } from './usePublishUpdate';
