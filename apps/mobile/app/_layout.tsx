@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/api/queryClient';
+import { AuthProvider, useAuth } from '@/auth';
 import { fontAssets } from '@/theme/typography';
 
 SplashScreen.preventAutoHideAsync();
@@ -51,12 +52,40 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          </Stack>
+          <AuthProvider>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/**
+ * Split out of `RootLayout` because it needs to read `useAuth()`, which only
+ * works *below* `AuthProvider` in the tree.
+ *
+ * This is the "block" half of the auth navigation split (see
+ * `app/(app)/_layout.tsx` and `useRequireAuth` for the "decide" half): while
+ * the session bootstrap (secure-store -> `GET /me`) is in flight, render
+ * nothing -- the same discipline as the font gate above, and for the same
+ * reason (`status === 'loading'` must never mean "blank screen forever";
+ * `AuthProvider`'s bootstrap effect always resolves to `guest` or `authed`).
+ * This layout never redirects on its own, so it can never race the `(app)`
+ * guard into a navigation loop.
+ */
+function RootNavigator() {
+  const { status } = useAuth();
+
+  if (status === 'loading') {
+    return null;
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(app)" />
+    </Stack>
   );
 }
