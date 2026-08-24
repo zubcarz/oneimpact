@@ -25,4 +25,9 @@ export const overlay = {
   transparent: 'transparent',
   /** Sombra del anillo activo en AvatarSelector/TestimonialAvatars (`componentes.md`). */
   highlightRing: 'rgba(250,204,21,0.5)',
+  /**
+   * `forest/80` del hero de "Quienes somos" (`pantallas-nuevas.md:18`),
+   * sobre `stats-bg.jpg`. `forest` es `#0f1a0a` (`packages/ui-tokens`).
+   */
+  forest80: 'rgba(15,26,10,0.8)',
 } as const;
