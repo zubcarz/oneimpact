@@ -33,7 +33,10 @@ describe('PaymentsService', () => {
   });
 
   const setup = async () => {
-    const repository = { create: jest.fn() };
+    const repository = {
+      create: jest.fn(),
+      runTransaction: jest.fn((work: (tx: unknown) => Promise<unknown>) => work({})),
+    };
     const eventBus = { publish: jest.fn() };
     // The simulation delay is only exercised on the approved path; keeping
     // it at 0 here (instead of the real ~800 ms default) is what keeps this
@@ -74,6 +77,7 @@ describe('PaymentsService', () => {
         reason: 'CARD_DECLINED',
       });
       expect(repository.create).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           userId: 'user-1',
           amount: 1500,
@@ -85,6 +89,7 @@ describe('PaymentsService', () => {
       );
       expect(eventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({ type: EventName.PAYMENT_FAILED }),
+        expect.anything(),
       );
     });
   });
@@ -101,10 +106,12 @@ describe('PaymentsService', () => {
         expect.objectContaining({ status: PaymentStatus.FAILED, reason: 'CARD_EXPIRED' }),
       );
       expect(repository.create).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ status: PaymentStatus.FAILED, simulated: true }),
       );
       expect(eventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({ type: EventName.PAYMENT_FAILED }),
+        expect.anything(),
       );
     });
 
@@ -133,6 +140,7 @@ describe('PaymentsService', () => {
 
       expect(result).toEqual({ status: PaymentStatus.SUCCEEDED, paymentId: 'payment-1' });
       expect(repository.create).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           userId: 'user-1',
           amount: 1500,
@@ -143,6 +151,7 @@ describe('PaymentsService', () => {
       );
       expect(eventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({ type: EventName.PAYMENT_SUCCEEDED }),
+        expect.anything(),
       );
     });
   });

@@ -15,6 +15,18 @@ export const envSchema = z.object({
   // development/production. Set to 0 in test envs (see `.env.example`) so
   // unit and e2e suites do not pay real wall-clock time for every payment.
   PAYMENT_SIMULATION_DELAY_MS: z.coerce.number().int().min(0).default(800),
+  // `OutboxRelay` tick cadence: how often it polls `OutboxEvent` for
+  // unprocessed rows. 1s keeps the demo feeling near-real-time without
+  // hammering Postgres between ticks.
+  OUTBOX_RELAY_INTERVAL_MS: z.coerce.number().int().min(1).default(1000),
+  // Max rows `OutboxRelay` pulls per tick, so a burst of events (e.g. a
+  // subscription activation cascading into several listeners) never turns
+  // into an unbounded query.
+  OUTBOX_RELAY_BATCH_SIZE: z.coerce.number().int().min(1).default(20),
+  // After this many failed delivery attempts, `OutboxRepository.findPendingBatch`
+  // stops returning the row: it is effectively "dead" without a separate
+  // status column (see plan decision D1).
+  OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(5),
   // Supabase Storage, used by `StorageService` (`src/infra/storage`) to sign
   // upload URLs for `POST /v1/uploads/sign`. All three are OPTIONAL and only
   // meaningful together: if any is missing, `StorageService` falls back to a

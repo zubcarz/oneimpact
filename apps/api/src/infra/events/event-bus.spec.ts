@@ -1,23 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { EventEmitterModule, OnEvent } from '@nestjs/event-emitter';
-import { Test } from '@nestjs/testing';
+import type { Prisma } from '@prisma/client';
 import type { DomainEvent } from './domain-event';
 import { EventName } from './event-names';
 import { EventBus } from './event-bus';
+import type { OutboxRepository } from './outbox.repository';
 
 interface ProjectFollowedPayload {
   projectId: string;
   userId: string;
-}
-
-@Injectable()
-class TestListener {
-  received: DomainEvent<typeof EventName.PROJECT_FOLLOWED, ProjectFollowedPayload>[] = [];
-
-  @OnEvent(EventName.PROJECT_FOLLOWED)
-  handle(event: DomainEvent<typeof EventName.PROJECT_FOLLOWED, ProjectFollowedPayload>) {
-    this.received.push(event);
-  }
 }
 
 describe('EventBus', () => {
@@ -30,48 +19,38 @@ describe('EventBus', () => {
     payload: { projectId: 'project-1', userId: 'user-1' },
   });
 
-  const setup = async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [EventEmitterModule.forRoot({ wildcard: true })],
-      providers: [EventBus, TestListener],
-    }).compile();
+  const buildOutbox = () => ({ insert: jest.fn().mockResolvedValue(undefined) });
 
-    const app = await moduleRef.init();
-    return {
-      eventBus: app.get(EventBus),
-      listener: app.get(TestListener),
-      close: () => app.close(),
-    };
-  };
-
-  it('delivers the published event and its payload to a registered @OnEvent listener', async () => {
-    const { eventBus, listener, close } = await setup();
+  /**
+   * Since the outbox landed, `publish` no longer delivers to listeners
+   * synchronously (that is `OutboxRelay`'s job now, see
+   * `outbox.relay.spec.ts`) -- it only inserts the event envelope into
+   * `OutboxEvent` through `OutboxRepository`. These tests assert that
+   * hand-off, not delivery.
+   */
+  it('inserts the event into the outbox with no tx when publish is called without one', async () => {
+    const outbox = buildOutbox();
+    const eventBus = new EventBus(outbox as unknown as OutboxRepository);
     const event = buildEvent();
 
     await eventBus.publish(event);
 
-    expect(listener.received).toHaveLength(1);
-    expect(listener.received[0]).toEqual(event);
-    expect(listener.received[0].payload).toEqual({ projectId: 'project-1', userId: 'user-1' });
-
-    await close();
+    expect(outbox.insert).toHaveBeenCalledTimes(1);
+    expect(outbox.insert).toHaveBeenCalledWith(event, undefined);
   });
 
-  it('behaves the same whether or not a tx is passed (ignored today, kept for the outbox migration)', async () => {
-    const { eventBus, listener, close } = await setup();
-    const eventWithoutTx = buildEvent();
-    const eventWithTx = buildEvent();
+  it('forwards the tx to the outbox insert so it commits in the same transaction as the caller', async () => {
+    const outbox = buildOutbox();
+    const eventBus = new EventBus(outbox as unknown as OutboxRepository);
+    const event = buildEvent();
+    // Not a real Prisma.TransactionClient -- publish() forwards whatever it
+    // is given to OutboxRepository.insert without inspecting it, so a plain
+    // marker object is enough to assert the hand-off.
+    const tx = { marker: 'fake-tx' } as unknown as Prisma.TransactionClient;
 
-    await eventBus.publish(eventWithoutTx);
-    // `tx` is not a real Prisma.TransactionClient here: publish() ignores it
-    // completely today, so any value (including undefined-shaped casts) must
-    // not change the observable behavior.
-    await eventBus.publish(eventWithTx, undefined);
+    await eventBus.publish(event, tx);
 
-    expect(listener.received).toHaveLength(2);
-    expect(listener.received[0]).toEqual(eventWithoutTx);
-    expect(listener.received[1]).toEqual(eventWithTx);
-
-    await close();
+    expect(outbox.insert).toHaveBeenCalledTimes(1);
+    expect(outbox.insert).toHaveBeenCalledWith(event, tx);
   });
 });

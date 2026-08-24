@@ -1,19 +1,35 @@
 import { Global, Module } from '@nestjs/common';
+import { OutboxAdminController } from './controllers/outbox-admin.controller';
 import { EventBus } from './event-bus';
+import { OutboxFaultInjector } from './outbox-fault-injector';
+import { OutboxRepository } from './outbox.repository';
+import { OutboxRelay } from './outbox.relay';
 
 /**
- * Global module exposing `EventBus` so any domain module can inject it
- * without importing another domain module's providers (the one exception to
- * the no-cross-module-import rule is `catalog`, which is read-only; this
- * infra module is a different kind of exception -- it is not a domain
- * module).
+ * Global module exposing `EventBus`, the outbox machinery behind it
+ * (`OutboxRepository`, `OutboxRelay`) and `OutboxFaultInjector` so any
+ * domain module can publish events without importing another domain
+ * module's providers (the one exception to the no-cross-module-import rule
+ * is `catalog`, which is read-only; this infra module is a different kind
+ * of exception -- it is not a domain module).
  *
- * Not wired into `AppModule` yet: that registration is a separate task in
- * this plan's phase (`app.module.ts` is out of scope for this task).
+ * `OutboxFaultInjector` is exported specifically so e2e tests can reach it
+ * via `app.get(OutboxFaultInjector)` to deterministically force a delivery
+ * failure -- see its class doc.
+ *
+ * Wired into `AppModule` (`app.module.ts`): `PrismaModule` is also `@Global`,
+ * so `OutboxRepository` resolves `PrismaService` without this module
+ * importing `PrismaModule` explicitly.
+ *
+ * `OutboxAdminController` (`GET /v1/admin/outbox`) lives here rather than in
+ * `impact` -- decision D3 of
+ * `.claude/plans/20260824-api-dashboard-metrics-and-outbox.plan.md`: the
+ * outbox is a delivery-infrastructure concern, not a business domain.
  */
 @Global()
 @Module({
-  providers: [EventBus],
-  exports: [EventBus],
+  controllers: [OutboxAdminController],
+  providers: [EventBus, OutboxRepository, OutboxRelay, OutboxFaultInjector],
+  exports: [EventBus, OutboxRepository, OutboxRelay, OutboxFaultInjector],
 })
 export class EventsModule {}

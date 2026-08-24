@@ -241,6 +241,7 @@ model OutboxEvent {
   createdAt   DateTime  @default(now())
   processedAt DateTime?
   attempts    Int       @default(0)
+  lastError   String?
 
   @@index([processedAt])
 }
