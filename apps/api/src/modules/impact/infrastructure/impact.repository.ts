@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { JourneyPoint, ProjectUpdate, Subscription } from '@prisma/client';
-import { JourneySource, SubscriptionStatus } from '@prisma/client';
+import { JourneySource } from '@prisma/client';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 
 export interface UpsertJourneyPointInput {
@@ -51,14 +51,24 @@ export class ImpactRepository {
     return this.prisma.journeyPoint.count({ where: { userId } });
   }
 
-  findActiveSubscription(userId: string): Promise<Subscription | null> {
+  /**
+   * Most recent subscription regardless of status: the dashboard must keep
+   * resolving `plan`/`billing`/`status` for a user whose subscription was
+   * canceled instead of falling into the "never subscribed" branch.
+   */
+  findLatestSubscription(userId: string): Promise<Subscription | null> {
     return this.prisma.subscription.findFirst({
-      where: { userId, status: SubscriptionStatus.ACTIVE },
+      where: { userId },
+      orderBy: { startedAt: 'desc' },
     });
   }
 
-  countFollowedProjects(userId: string): Promise<number> {
-    return this.prisma.projectFollow.count({ where: { userId } });
+  async listFollowedProjectIds(userId: string): Promise<string[]> {
+    const rows = await this.prisma.projectFollow.findMany({
+      where: { userId },
+      select: { projectId: true },
+    });
+    return rows.map((row) => row.projectId);
   }
 
   /**

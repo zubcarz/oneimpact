@@ -35,6 +35,7 @@ describe('dashboardSummarySchema', () => {
       status: 'ACTIVE',
       activeMonths: 3,
       followedProjects: 2,
+      followedProjectIds: ['project-1', 'project-2'],
       journeyPoints: 120,
       unreadNotifications: 4,
       latestUpdate: {
@@ -57,6 +58,7 @@ describe('dashboardSummarySchema', () => {
       status: null,
       activeMonths: 0,
       followedProjects: 0,
+      followedProjectIds: [],
       journeyPoints: 0,
       unreadNotifications: 0,
     });
@@ -71,6 +73,21 @@ describe('dashboardSummarySchema', () => {
       status: null,
       activeMonths: 0,
       followedProjects: 0,
+      followedProjectIds: [],
+      unreadNotifications: 0,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a summary missing followedProjectIds', () => {
+    const result = dashboardSummarySchema.safeParse({
+      plan: null,
+      billing: null,
+      status: null,
+      activeMonths: 0,
+      followedProjects: 0,
+      journeyPoints: 0,
       unreadNotifications: 0,
     });
 

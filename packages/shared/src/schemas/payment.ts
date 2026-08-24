@@ -86,6 +86,7 @@ export const dashboardSummarySchema = z.object({
   status: z.enum([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELED]).nullable(),
   activeMonths: z.number(),
   followedProjects: z.number(),
+  followedProjectIds: z.array(z.string()),
   latestUpdate: projectUpdateSchema.optional(),
   journeyPoints: z.number(),
   unreadNotifications: z.number(),
