@@ -32,7 +32,7 @@ describe('DashboardService', () => {
 
   interface RepositoryOverrides {
     subscription?: PrismaSubscription | null;
-    followedProjects?: number;
+    followedProjectIds?: string[];
     journeyPoints?: number;
     unreadNotifications?: number;
     latestUpdate?: PrismaProjectUpdate | null;
@@ -40,8 +40,8 @@ describe('DashboardService', () => {
 
   const setup = (overrides: RepositoryOverrides = {}) => {
     const repository = {
-      findActiveSubscription: jest.fn().mockResolvedValue(overrides.subscription ?? null),
-      countFollowedProjects: jest.fn().mockResolvedValue(overrides.followedProjects ?? 0),
+      findLatestSubscription: jest.fn().mockResolvedValue(overrides.subscription ?? null),
+      listFollowedProjectIds: jest.fn().mockResolvedValue(overrides.followedProjectIds ?? []),
       countJourneyPoints: jest.fn().mockResolvedValue(overrides.journeyPoints ?? 0),
       countUnreadNotifications: jest.fn().mockResolvedValue(overrides.unreadNotifications ?? 0),
       findLatestUpdateForFollowedProjects: jest
@@ -66,7 +66,7 @@ describe('DashboardService', () => {
     const { service } = setup({
       subscription: null,
       journeyPoints: 4,
-      followedProjects: 2,
+      followedProjectIds: ['project-1', 'project-2'],
       unreadNotifications: 3,
     });
 
@@ -77,7 +77,9 @@ describe('DashboardService', () => {
       billing: null,
       status: null,
       activeMonths: 0,
+      startedAt: null,
       followedProjects: 2,
+      followedProjectIds: ['project-1', 'project-2'],
       journeyPoints: 4,
       unreadNotifications: 3,
     });
@@ -112,7 +114,7 @@ describe('DashboardService', () => {
       subscription,
       journeyPoints: 3,
       unreadNotifications: 2,
-      followedProjects: 5,
+      followedProjectIds: ['project-1', 'project-2', 'project-3', 'project-4', 'project-5'],
     });
 
     const summary = await service.getSummary('user-1');
@@ -120,8 +122,35 @@ describe('DashboardService', () => {
     expect(summary.journeyPoints).toBe(3);
     expect(summary.unreadNotifications).toBe(2);
     expect(summary.followedProjects).toBe(5);
+    expect(summary.followedProjectIds).toEqual([
+      'project-1',
+      'project-2',
+      'project-3',
+      'project-4',
+      'project-5',
+    ]);
     expect(summary.plan).toEqual(buildPlan());
     expect(summary.billing).toBe(Billing.MONTHLY);
     expect(summary.status).toBe(SubscriptionStatus.ACTIVE);
+    expect(summary.startedAt).toBe(subscription.startedAt.toISOString());
+  });
+
+  it('resolves the plan and status CANCELED for a canceled subscription, computing activeMonths up to canceledAt (not "now")', async () => {
+    // "Now" is well after canceledAt: startedAt -> canceledAt is 1 whole
+    // month (Jun 1 -> Jul 15); startedAt -> "now" would be 2 (Jun 1 -> Aug 16).
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-16T00:00:00.000Z'));
+    const subscription = buildSubscription({
+      status: SubscriptionStatus.CANCELED,
+      startedAt: new Date('2026-06-01T00:00:00.000Z'),
+      canceledAt: new Date('2026-07-15T00:00:00.000Z'),
+    });
+    const { service } = setup({ subscription });
+
+    const summary = await service.getSummary('user-1');
+
+    expect(summary.plan).not.toBeNull();
+    expect(summary.status).toBe(SubscriptionStatus.CANCELED);
+    expect(summary.activeMonths).toBe(1);
+    expect(summary.startedAt).toBe(subscription.startedAt.toISOString());
   });
 });

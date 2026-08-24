@@ -65,3 +65,12 @@ export type { CardPreviewProps } from './CardPreview';
 
 export { BackButton } from './BackButton';
 export type { BackButtonProps, BackButtonTone } from './BackButton';
+
+export { SubscriptionCard } from './SubscriptionCard';
+export type { SubscriptionCardProps } from './SubscriptionCard';
+
+export { JourneyLine } from './JourneyLine';
+export type { JourneyLineProps } from './JourneyLine';
+
+export { NotificationItem } from './NotificationItem';
+export type { NotificationItemProps } from './NotificationItem';

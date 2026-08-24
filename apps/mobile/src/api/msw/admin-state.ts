@@ -48,23 +48,26 @@ function resolveLatestUpdate(followedProjectIds: string[]): ProjectUpdate | unde
 
 /**
  * Mirrors `DashboardService.getSummary`: always resolves (never 404, unlike
- * `GET /v1/subscriptions/me`), subscription-derived fields go null/0 without
- * an ACTIVE subscription, user-facts fields (`journeyPoints`,
- * `followedProjects`, `unreadNotifications`, `latestUpdate`) are computed
- * unconditionally.
+ * `GET /v1/subscriptions/me`), subscription-derived fields go null/0 only
+ * when the user never subscribed at all -- an ACTIVE or CANCELED
+ * subscription both resolve a plan (a CANCELED one caps `activeMonths` at
+ * `canceledAt` instead of "now"). User-facts fields (`journeyPoints`,
+ * `followedProjects`, `followedProjectIds`, `unreadNotifications`,
+ * `latestUpdate`) are computed unconditionally.
  */
 export function getDashboardSummary(userId: string): DashboardSummary {
   const subscription = findSubscription(userId);
   const followedProjectIds = getFollowedProjectIds(userId);
   const shared = {
     followedProjects: followedProjectIds.length,
+    followedProjectIds,
     latestUpdate: resolveLatestUpdate(followedProjectIds),
     journeyPoints: getJourneyPoints(userId),
     unreadNotifications: getUnreadNotificationsCount(userId),
   };
 
-  if (!subscription || subscription.status !== SubscriptionStatus.ACTIVE) {
-    return { plan: null, billing: null, status: null, activeMonths: 0, ...shared };
+  if (!subscription) {
+    return { plan: null, billing: null, status: null, activeMonths: 0, startedAt: null, ...shared };
   }
 
   const plan = PLANS.find((item) => item.id === subscription.planId);
@@ -72,11 +75,17 @@ export function getDashboardSummary(userId: string): DashboardSummary {
     throw new SimulatedError(404, 'PLAN_NOT_FOUND', `El plan "${subscription.planId}" no existe.`);
   }
 
+  const activeMonthsUntil =
+    subscription.status === SubscriptionStatus.CANCELED && subscription.canceledAt
+      ? new Date(subscription.canceledAt)
+      : new Date();
+
   return {
     plan,
     billing: subscription.billing,
     status: subscription.status,
-    activeMonths: activeMonthsSince(new Date(subscription.startedAt)),
+    activeMonths: activeMonthsSince(new Date(subscription.startedAt), activeMonthsUntil),
+    startedAt: subscription.startedAt,
     ...shared,
   };
 }

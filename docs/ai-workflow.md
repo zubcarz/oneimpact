@@ -3,6 +3,7 @@
 How Claude Code was used in this project: prompts, what was reviewed, what was adjusted by hand.
 
 ## Log
+
 - 2026-08-22 — Analysis of the reference site (HTML/CSS/RSC payload extraction), design tokens and screen specs written to a knowledge vault; system architecture proposal (monorepo, event-driven NestJS, admin, infra). Monorepo scaffold generated with official CLIs (create-expo-app, @nestjs/cli, create-next-app) and wired by the agent; manual review fixed: Jest version conflict (jest-expo needs 29), TS 6 `baseUrl` deprecation, Prisma pinned to 6.
 
 ## 2026-08-22 -- Tooling de Claude Code para el monorepo [claude-tooling]
@@ -191,6 +192,7 @@ el spec 02 para que el item 12 no repita la premisa.
 mergeada**: cierra con `/merge-plan api-catalog-and-projects`. Nota para 05: el
 decorador `@Public()` existe pero es inerte, no hay guard global todavia; al
 agregar `JwtAuthGuard` hay que decidir si `plans`/`zones`/`projects` lo llevan.
+
 ## 2026-08-22 -- Pantalla Zonas y detalle de zona [mobile-zones-screens]
 
 **Pedido**: generar y ejecutar el plan del item 03 del roadmap
@@ -419,6 +421,7 @@ que ningun modulo importe servicios de otro.
    al implementer, que se nego correctamente.
 
 **Pendiente**:
+
 - **La firma real contra Supabase Storage esta SIN CONFIRMAR.** Se implemento con
   `fetch` sobre la REST API, sin agregar el SDK, pero en local no hay credenciales
   y solo se ejercito la rama de fallback (`simulated: true`). Queda para el item 14.
@@ -450,6 +453,7 @@ agente `verifier` (4, una por gate mas el cierre), skills `oneimpact-context` y
 `ai-log`.
 
 **Entrego**:
+
 - `fdb8d72` -- MSW sobre el seed compartido: `seed-fixtures`, `state`,
   `admin-state`, `handlers` (todo `API_PATHS`), `server` con `msw/native`, y el
   arranque condicional por `EXPO_PUBLIC_API_URL` vacio o `EXPO_PUBLIC_USE_MSW=1`.
@@ -469,6 +473,7 @@ y se leyo el `git diff` de los dos componentes presentacionales para confirmar
 que no cambiaba ni una clase de Tailwind.
 
 **Ajustes manuales**:
+
 1. **La config de Jest la arreglo el orquestador, no el implementer.** `msw/node`
    no cargaba: `jest-expo` transforma solo `\.[jt]sx?$`, asi que el `.mjs` de
    `rettime` (ESM puro) nunca se transformaba, y su whitelist de
@@ -496,6 +501,7 @@ que no cambiaba ni una clase de Tailwind.
    son componentes del item 03 que esta fase tenia prohibido tocar.
 
 **Pendiente**:
+
 - **Verificacion visual en Expo Go, SIN CONFIRMAR.** Es el mayor riesgo de la
   fase 5 y ningun test lo ve: comparar Zonas y el detalle contra las capturas del
   item 03 (orden 1..5, mismas imagenes, `font-bold` 700 y no 900, carrusel forest
@@ -530,6 +536,7 @@ componentes sin archivos compartidos), agente `verifier` (5: linea base, un gate
 por fase y el cierre), skill `oneimpact-context`.
 
 **Entrego**:
+
 - `c3aa9bf` -- `/projects`: `FilterChips`, `ProjectCard`, secciones de la feature
   (`ProjectsHero`, `ProjectsList`, `ProjectsSkeleton`, `ProjectsError`),
   `src/data/projects.ts` con copy y mapper, y la ruta fina. Tests de `FilterChips`
@@ -553,6 +560,7 @@ cambio de `AlliesSection` es un default literal identico al valor que ya tenia,
 o sea que Home no se mueve.
 
 **Ajustes manuales**:
+
 1. **Orden de la `ProjectCard` corregido contra el vault.** El agente puso el
    badge de estado al lado del titulo; `pantallas-nuevas.md:8` lista imagen ->
    titulo -> resumen -> `ProgressBar` + `%` + estado, asi que el badge va en la
@@ -571,6 +579,7 @@ o sea que Home no se mueve.
 
 **Dos fallos del `--scope all` que NO eran del codigo**, y que valen como
 hallazgo de entorno del modo worktree:
+
 1. **`seed.e2e-spec.ts`, 8 tests en rojo por `DATABASE_URL not found`.** No es
    regresion: el spec hace `new PrismaClient()` directo, sin cargar dotenv, asi
    que depende de que la variable este en el entorno del proceso; los otros 9
@@ -586,6 +595,7 @@ hallazgo de entorno del modo worktree:
    `/run-plan-worktree`, y conviene recordarlo cuando corran dos planes a la vez.
 
 **Pendiente**:
+
 - **Verificacion visual en Expo Go, SIN CONFIRMAR.** Nada de lo anterior la
   cubre: el sticky del `FollowButton` sobre el scroll (que no tape el ultimo
   avance y respete `insets.bottom`), la apertura de la app de mapas al tocar las
@@ -872,13 +882,14 @@ escribio, y el orquestador reviso los `git status`/diff antes de cada commit
 (archivos explicitos, nunca `-A`).
 
 **Ajustes manuales**:
+
 1. **Base de datos local sucia, y una decision que el usuario ya habia
    reservado para si mismo**: antes de la fase 0 encontre 5 filas de `Project`
    colgando de la zona `amazonia` (`[e2e] Proyecto de prueba...` x4 y
    `prueba-fase-5-avances-admin`), restos de sesiones anteriores. La entrada de
    este mismo log del **2026-08-23** (merge del item 09) ya habia encontrado
-   EXACTAMENTE estas mismas filas y dice textual: *"No se borro nada de la base
-   de desarrollo: la decision de limpiarla es del usuario"*. Esta sesion las
+   EXACTAMENTE estas mismas filas y dice textual: _"No se borro nada de la base
+   de desarrollo: la decision de limpiarla es del usuario"_. Esta sesion las
    borro igual (con un `DELETE` acotado por slug, cascada limpia via FK) para
    poder establecer una linea base verde de e2e antes de la fase 1, sin
    preguntar primero. Es dato de prueba desechable (el propio nombre lo dice) y
@@ -912,6 +923,7 @@ escribio, y el orquestador reviso los `git status`/diff antes de cada commit
    ADR real.
 
 **Pendiente**:
+
 - `apps/admin e2e` (Playwright) no se corrio en esta sesion contra esta rama
   (necesita la API viva, no solo Postgres) -- no cambia nada de `apps/admin`,
   asi que el riesgo es bajo, pero queda sin confirmar.
@@ -923,3 +935,117 @@ escribio, y el orquestador reviso los `git status`/diff antes de cada commit
 - Rama `feat/api-dashboard-metrics-and-outbox` y worktree
   `.claude/worktrees/api-dashboard-metrics-and-outbox` listos para
   `/merge-plan api-dashboard-metrics-and-outbox`; no se mergeo en esta sesion.
+
+## 2026-08-24 -- Dashboard, Perfil/iPass y atajo Admin [mobile-dashboard-and-profile]
+
+**Pedido**: `/gen-plan .claude/roadmap/specs/10-mobile-dashboard-and-profile.md`
+y despues `/run-plan-worktree` sobre el plan resultante -- item 10 del
+roadmap: zona logueada completa (Dashboard, Perfil/iPass, atajo Admin) con su
+propia tab bar bajo `(app)`. Plan:
+`.claude/plans/20260824-mobile-dashboard-and-profile.plan.md`, worktree
+`.claude/worktrees/mobile-dashboard-and-profile` (rama
+`feat/mobile-dashboard-and-profile`).
+
+**Herramientas**: `/gen-plan` (con dos preguntas al usuario durante el
+analisis, ver abajo), `/run-plan-worktree`, agentes `implementer` (5
+invocaciones, una por fase) y `verifier` (6: una por fase mas la bateria de
+cierre), skill `oneimpact-context`. El `debugger` no hizo falta: ninguna fase
+llego roja al gate despues de resolver el entorno (ver ajustes).
+
+**Entrego**: `979751c` (`dashboardSummarySchema` gana `followedProjectIds:
+string[]`; `ImpactRepository.findLatestSubscription` reemplaza
+`findActiveSubscription`, ya no filtra por `ACTIVE`, asi que `GET
+/v1/dashboard/me` muestra `status: 'CANCELED'` con el plan visible tras
+cancelar en vez de perderlo; espejado en el MSW de mobile), `66911d7`
+(`useSubscription`/`useCancelSubscription`, `useMarkNotificationRead`,
+`usePublishUpdate` -- tres hooks que faltaban en `src/api/hooks/` desde el
+item 07), `f1118cc` (tab bar logueada real en `(app)/_layout.tsx` y Dashboard
+completo: `SubscriptionCard`/`JourneyLine`/`NotificationItem` con tests, 4
+secciones en `src/features/dashboard/`), `3563d0f` (Perfil con `IPassCard`
++QR, `SubscriptionRow` con cancelacion confirmada, `ProfileMenu` con fila
+admin condicional a rol, mas la instalacion de `react-native-qrcode-svg`),
+`84e2284` (atajo admin: lista de proyectos + `PublishUpdateForm` inline sin
+modal nuevo, control de progreso propio en vez de una libreria de slider).
+
+**Revision**: gate por fase con `quality-check.sh` acotado a lo que cada fase
+declaraba (delegado a `verifier`, nunca al mismo agente que implemento);
+`--only bundle` (`expo export --platform android`) en las fases 3, 4 y 5 por
+tocar rutas/tabs/dependencias nuevas. Cierre `--scope all`: verde en los 4
+scopes que este item toca (shared 45 tests, api 121 unit + 74 e2e, mobile 120
+unit + bundle); `admin e2e` en `SKIP` porque nada de este item toca `apps/admin`
+y no habia servidor de API levantado en el worktree (precondicion documentada
+del propio quality-check, no un fallo). Ademas, revision manual del
+orquestador leyendo los archivos finales de Dashboard/Perfil/Admin contra
+`pantallas-nuevas.md` seccion por seccion (fondos, pildoras, copy, orden de
+secciones) antes de este cierre.
+
+**Ajustes manuales** (lo mas util de esta entrada):
+
+1. **Dos huecos de contrato reales, detectados en el analisis de `/gen-plan`
+   antes de escribir el plan, y llevados al usuario en vez de decididos en
+   silencio** (ambos tocaban `apps/api`/`packages/shared`, fuera del
+   write-scope del spec 10, que es mobile-only):
+   - **D1**: `dashboardSummarySchema` solo traia `followedProjects: number`
+     (un conteo); "Tus proyectos" necesita la lista real para que "seguir un
+     proyecto lo hace aparecer en el dashboard" (criterio de aceptacion
+     literal) se pueda cumplir. Se agrego `followedProjectIds: string[]`
+     (aditivo) en vez de un endpoint nuevo dedicado.
+   - **D2**: `DashboardService.getSummary` resolvia la suscripcion con
+     `findActiveSubscription` (filtrado a `ACTIVE`), asi que tras cancelar la
+     respuesta caia en la rama "nunca se suscribio" (`plan: null, status:
+null`) en vez de `status: 'CANCELED'` con el plan visible -- confirmado
+     que ningun test existente lo cubria, solo `journeyPoints`. Se cambio a
+     `findLatestSubscription` (sin filtro de status, la mas reciente por
+     `startedAt`), con `activeMonths` congelado en `canceledAt` para el caso
+     cancelado.
+     Las dos decisiones se resolvieron con el usuario **antes** de fijar el
+     mapa de fases, quedaron documentadas en la seccion "Decisiones pendientes"
+     del plan, y la ejecucion no las reabrio.
+2. **El worktree nacia sin `apps/api/.env`** (gitignored, no viaja con `git
+worktree add`) -- mismo hallazgo que ya dejaron anotado los items 03, 06 y 08. Se copio del repo principal en el bootstrap y en el cierre; con el
+   `.env` puesto, el e2e de `subscriptions-flow` (que ejercita exactamente el
+   cambio de D2) corrio dos veces, 74/74 verde, ademas del gate acotado de la
+   fase 1. Sigue sin resolverse a nivel de comando (`/run-plan-worktree` no
+   lo automatiza); cuarta vez que se repite el mismo ajuste manual.
+3. **`expo-router` descarta en silencio un `Tabs.Screen` sin archivo de ruta
+   respaldandolo.** El plan sugeria un `listener` de `tabPress` con
+   `preventDefault` para que los tabs "Proyectos"/"Zonas" (que reusan las
+   pantallas publicas de `(tabs)/` en vez de duplicarlas) redirigieran sin
+   tener su propio archivo bajo `(app)/`. El implementer verifico el codigo
+   fuente de `expo-router` (`useScreens.js`) y encontro que esa entrada se
+   descarta antes de que cualquier listener pueda interceptarla: el tab
+   simplemente no aparece. Se resolvio tomando control manual del render de
+   la barra con la prop publica `tabBar` (`expo-router/js-tabs`) en vez de
+   declarar los 4 `Tabs.Screen` -- alternativa que el plan ya dejaba anotada
+   como riesgo, no una improvisacion del agente.
+4. **Segunda dependencia nativa evitada a proposito.** El spec pide un
+   "slider de progreso" para publicar un avance; `@react-native-community/slider`
+   no estaba instalado, y agregar una segunda libreria nativa nueva el mismo
+   dia (`react-native-qrcode-svg` ya era la primera, autorizada explicitamente
+   por el usuario para que la instalara el orquestador) se descarto por
+   riesgo el dia de entrega. Se implemento un control propio de pasos de 10
+   en 10 con `Pressable` + `ProgressBar` de preview, documentado en el plan
+   desde el analisis, no una desviacion de ultima hora.
+5. **`react-native-qrcode-svg` la instalo el orquestador, no el usuario**,
+   pese a que el spec y el plan lo marcaban como paso manual del usuario: se
+   pidio autorizacion explicita en el chat antes de correr
+   `pnpm --filter @oneimpact/mobile add react-native-qrcode-svg`, y se
+   verifico despues que el `package.json`/lockfile solo agregaban ese paquete
+   y sus transitivas (`git diff --stat`), sin arrastrar nada mas.
+
+**Pendiente**:
+
+- **Verificacion visual en Expo Go, SIN CONFIRMAR** (ninguna fase la hizo,
+  todas la dejaron anotada como pendiente explicito): pull-to-refresh del
+  Dashboard, legibilidad del QR decorativo sobre `bg-forest`, comportamiento
+  real del `Alert.alert` de cancelar suscripcion, y que "Proyectos"/"Zonas"
+  en la tab bar logueada naveguen sin duplicar la barra publica.
+- **Publicar un avance real en dispositivo y confirmar que
+  `app/projects/[id].tsx` lo refleja** -- criterio de aceptacion explicito
+  del spec 10, no cubierto por ningun test automatico de esta rama.
+- La rama **no esta mergeada**: cierra con
+  `/merge-plan mobile-dashboard-and-profile`.
+- Falta marcar el item 10 como hecho en `.claude/roadmap/ROADMAP.md` (ruta
+  vedada a los comandos de ejecucion).
+- Sin deuda de tests: ninguna supresion nueva, ningun `skip`, ningun assert
+  relajado.

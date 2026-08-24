@@ -34,7 +34,9 @@ describe('dashboardSummarySchema', () => {
       billing: 'monthly',
       status: 'ACTIVE',
       activeMonths: 3,
+      startedAt: '2026-05-01T00:00:00.000Z',
       followedProjects: 2,
+      followedProjectIds: ['project-1', 'project-2'],
       journeyPoints: 120,
       unreadNotifications: 4,
       latestUpdate: {
@@ -56,7 +58,9 @@ describe('dashboardSummarySchema', () => {
       billing: null,
       status: null,
       activeMonths: 0,
+      startedAt: null,
       followedProjects: 0,
+      followedProjectIds: [],
       journeyPoints: 0,
       unreadNotifications: 0,
     });
@@ -70,7 +74,39 @@ describe('dashboardSummarySchema', () => {
       billing: null,
       status: null,
       activeMonths: 0,
+      startedAt: null,
       followedProjects: 0,
+      followedProjectIds: [],
+      unreadNotifications: 0,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a summary missing followedProjectIds', () => {
+    const result = dashboardSummarySchema.safeParse({
+      plan: null,
+      billing: null,
+      status: null,
+      activeMonths: 0,
+      startedAt: null,
+      followedProjects: 0,
+      journeyPoints: 0,
+      unreadNotifications: 0,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a summary missing startedAt', () => {
+    const result = dashboardSummarySchema.safeParse({
+      plan: null,
+      billing: null,
+      status: null,
+      activeMonths: 0,
+      followedProjects: 0,
+      followedProjectIds: [],
+      journeyPoints: 0,
       unreadNotifications: 0,
     });
 

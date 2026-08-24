@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { DashboardSummary, Plan } from '@oneimpact/shared';
 import type { ProjectUpdate as PrismaProjectUpdate } from '@prisma/client';
+import { SubscriptionStatus } from '@prisma/client';
 import { DomainError } from '../../../common/errors/domain-error';
 import { CatalogService } from '../../catalog/application/catalog.service';
 import { ImpactRepository } from '../infrastructure/impact.repository';
@@ -29,10 +30,12 @@ export class DashboardService {
    * Two groups of fields, two different lifetimes:
    *
    * - Subscription-derived (`plan`, `billing`, `status`, `activeMonths`):
-   *   only meaningful while there IS an ACTIVE subscription. Without one
-   *   there is no plan/billing/status to report and no active period to
-   *   count, so these go `null`/`0`.
-   * - User facts (`journeyPoints`, `followedProjects`,
+   *   resolved from the user's most recent subscription regardless of its
+   *   status -- ACTIVE or CANCELED both resolve a plan. Only a user who
+   *   never subscribed at all (no `Subscription` row) gets `null`/`0` here.
+   *   For a CANCELED subscription, `activeMonths` counts up to
+   *   `canceledAt`, not "now": the active period stopped at cancellation.
+   * - User facts (`journeyPoints`, `followedProjects`, `followedProjectIds`,
    *   `unreadNotifications`, `latestUpdate`): computed unconditionally,
    *   subscription or not. Journey points in particular are the user's
    *   permanent record of impact -- they mark months the user actually
@@ -43,14 +46,15 @@ export class DashboardService {
    *   follows and notifications on the dashboard.
    */
   async getSummary(userId: string): Promise<DashboardSummary> {
-    const [subscription, followedProjects, journeyPoints, unreadNotifications, latestUpdate] =
+    const [subscription, followedProjectIds, journeyPoints, unreadNotifications, latestUpdate] =
       await Promise.all([
-        this.repository.findActiveSubscription(userId),
-        this.repository.countFollowedProjects(userId),
+        this.repository.findLatestSubscription(userId),
+        this.repository.listFollowedProjectIds(userId),
         this.repository.countJourneyPoints(userId),
         this.repository.countUnreadNotifications(userId),
         this.repository.findLatestUpdateForFollowedProjects(userId),
       ]);
+    const followedProjects = followedProjectIds.length;
 
     if (!subscription) {
       return {
@@ -58,7 +62,9 @@ export class DashboardService {
         billing: null,
         status: null,
         activeMonths: 0,
+        startedAt: null,
         followedProjects,
+        followedProjectIds,
         latestUpdate: latestUpdate ? this.toProjectUpdate(latestUpdate) : undefined,
         journeyPoints,
         unreadNotifications,
@@ -66,13 +72,19 @@ export class DashboardService {
     }
 
     const plan = await this.resolvePlan(subscription.planId);
+    const activeMonthsUntil =
+      subscription.status === SubscriptionStatus.CANCELED
+        ? (subscription.canceledAt ?? new Date())
+        : new Date();
 
     return {
       plan,
       billing: subscription.billing,
       status: subscription.status,
-      activeMonths: this.activeMonthsSince(subscription.startedAt),
+      activeMonths: this.activeMonthsSince(subscription.startedAt, activeMonthsUntil),
+      startedAt: subscription.startedAt.toISOString(),
       followedProjects,
+      followedProjectIds,
       latestUpdate: latestUpdate ? this.toProjectUpdate(latestUpdate) : undefined,
       journeyPoints,
       unreadNotifications,
