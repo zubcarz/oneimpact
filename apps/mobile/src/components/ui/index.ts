@@ -41,3 +41,12 @@ export type { PlanSelectorProps } from './PlanSelector';
 
 export { BenefitItem } from './BenefitItem';
 export type { BenefitItemProps } from './BenefitItem';
+
+export { Input } from './Input';
+export type { InputProps } from './Input';
+
+export { Stepper } from './Stepper';
+export type { StepperProps } from './Stepper';
+
+export { CardPreview } from './CardPreview';
+export type { CardPreviewProps } from './CardPreview';
