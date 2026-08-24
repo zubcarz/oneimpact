@@ -33,6 +33,12 @@ export type { AdvanceCardProps } from './AdvanceCard';
 export { ProgressBar } from './ProgressBar';
 export type { ProgressBarProps } from './ProgressBar';
 
+export { FilterChips } from './FilterChips';
+export type { FilterChipsProps, FilterChipItem } from './FilterChips';
+
+export { ProjectCard } from './ProjectCard';
+export type { ProjectCardProps } from './ProjectCard';
+
 export { BillingToggle } from './BillingToggle';
 export type { BillingToggleProps } from './BillingToggle';
 
