@@ -432,3 +432,85 @@ que ningun modulo importe servicios de otro.
   razon.
 - Sin deuda de tests: ninguna supresion nueva, ningun `skip`, ningun assert
   relajado.
+
+---
+
+## 2026-08-23 -- MSW, sesion y Zonas contra hooks: cierre del item 07 [mobile-data-layer-and-auth]
+
+**Pedido**: completar las fases pendientes del plan
+`.claude/plans/20260822-mobile-data-layer-and-auth.plan.md`. El item 07 se habia
+mergeado a `main` incompleto: de sus 6 fases solo entraron la 1 y la 2
+(`8d7c0d1`, `74521aa` en `2e45527`). Faltaban la 3 (MSW), la 4 (`AuthProvider` y
+grupos de rutas), la 5 (Zonas consumiendo hooks) y la 6 (cierre).
+
+**Herramientas**: `/gen-plan` (que fue lo que destapo el problema: al planificar
+el item 09 se detecto que `AuthProvider` no existia pese a estar el 07 mergeado),
+`/run-plan-autonomous`, agente `implementer` (4 invocaciones, una por tarea),
+agente `verifier` (4, una por gate mas el cierre), skills `oneimpact-context` y
+`ai-log`.
+
+**Entrego**:
+- `fdb8d72` -- MSW sobre el seed compartido: `seed-fixtures`, `state`,
+  `admin-state`, `handlers` (todo `API_PATHS`), `server` con `msw/native`, y el
+  arranque condicional por `EXPO_PUBLIC_API_URL` vacio o `EXPO_PUBLIC_USE_MSW=1`.
+- `81016a1` -- `AuthProvider` sobre secure-store, `useAuth`, `useRequireAuth`,
+  `useRequireRole`, grupo `(app)` con guard y `dashboard` placeholder.
+- `7ccdcef` -- Zonas y detalle consumiendo `useZones`/`useProjects`/`useZone`,
+  con `ZonesSkeleton` y `ZonesError`.
+
+**Revision**: gate por fase con `quality-check.sh` acotado a lo que la fase
+declaraba, mas `--only bundle` en la fase de MSW (obligatorio: Jest corre en Node
+y tapa los fallos de Hermes). Cierre con `--scope all` verde en los 6 workspaces,
+incluidos los e2e de `api` contra Postgres (10 suites / 74 tests) y Playwright de
+`admin`. `apps/mobile` paso de 13 suites / 48 tests a **17 / 83**. Ademas se
+contrastaron a mano las afirmaciones de los agentes que tenian consecuencias:
+se reprodujo el fallo de Jest, se verifico la duplicacion de React con `node -e`,
+y se leyo el `git diff` de los dos componentes presentacionales para confirmar
+que no cambiaba ni una clase de Tailwind.
+
+**Ajustes manuales**:
+1. **La config de Jest la arreglo el orquestador, no el implementer.** `msw/node`
+   no cargaba: `jest-expo` transforma solo `\.[jt]sx?$`, asi que el `.mjs` de
+   `rettime` (ESM puro) nunca se transformaba, y su whitelist de
+   `transformIgnorePatterns` no lo alcanzaba porque con `node-linker=hoisted` no
+   hay segmento `.pnpm` en la ruta. Hizo falta agregar un `transform` para `.mjs`
+   **y** meter el arbol ESM de msw en la whitelist. Dos iteraciones: primero
+   `rettime`, despues aparecio `until-async`. Es la desviacion de write-scope que
+   la decision D4 del plan ya anticipaba; Metro no necesito nada.
+2. **El implementer se planto en vez de tapar el fallo**, y estuvo bien: propuso
+   `jest.mock('rettime')` y lo descarto solo, porque `Emitter` sostiene el bus de
+   eventos de msw y un stub habria roto en silencio justo la interceptacion que
+   el test debia verificar. Reporto BLOQUEADO con el diagnostico completo.
+3. **Bug de entorno real, encontrado por el agente**: `apps/mobile` fija
+   `react@19.2.3` y `apps/admin` `react@19.2.8`; con `hoisted`, pnpm deja una
+   copia anidada en `@tanstack/react-query/node_modules/react`. Cualquier test que
+   monte `QueryClientProvider` con RNTL revienta por doble dispatcher. Se rodeo
+   sin tocar el lockfile: `AuthProvider` usa `callApi` y el singleton
+   `queryClient` en vez de `useLogin`/`useRegister`/`useQueryClient`, con lo que
+   deja de depender de estar bajo `QueryClientProvider`. Los hooks quedan intactos
+   para el item 09.
+4. **Divergencia con la decision D3, aceptada y anotada, no corregida**: D3 pedia
+   que una `imageKey` sin asset local renderizara la tarjeta sin imagen; el mapper
+   descarta la entrada. Con el seed todas resuelven, asi que hoy no cambia nada.
+   Cerrarlo bien exige que `ZoneRow` y `AdvanceCard` acepten imagen opcional, y
+   son componentes del item 03 que esta fase tenia prohibido tocar.
+
+**Pendiente**:
+- **Verificacion visual en Expo Go, SIN CONFIRMAR.** Es el mayor riesgo de la
+  fase 5 y ningun test lo ve: comparar Zonas y el detalle contra las capturas del
+  item 03 (orden 1..5, mismas imagenes, `font-bold` 700 y no 900, carrusel forest
+  con dots) y forzar `EXPO_PUBLIC_API_URL` a un puerto muerto para ver
+  `ZonesSkeleton` y `ZonesError`. Tambien sin confirmar: que `signIn` contra MSW
+  redirige a `(app)`, que matar y reabrir mantiene la sesion, y que `signOut`
+  vuelve a `(tabs)`.
+- **Alinear la version de `react` entre `apps/mobile` y `apps/admin`** (o un
+  `pnpm.overrides`). Mientras no se haga, ningun test de mobile puede montar un
+  `QueryClientProvider` real.
+- Falta marcar el item 07 como hecho en `.claude/roadmap/ROADMAP.md` (hoy dice
+  `parcial`, con una nota que ya quedo obsoleta) y agregar el plan al indice de
+  `.claude/plans/README.md`: los comandos de ejecucion tienen prohibido escribir
+  en `.claude/`.
+- Sin deuda de tests: ninguna supresion nueva, ningun `skip`, ningun assert
+  relajado. El unico assert que se reescribio (`typeof image === 'number'`) estaba
+  mal formulado desde el principio: bajo Jest un `require()` de imagen es un stub
+  de `jest-expo`, no un numero.
