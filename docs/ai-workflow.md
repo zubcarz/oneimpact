@@ -1049,3 +1049,112 @@ worktree add`) -- mismo hallazgo que ya dejaron anotado los items 03, 06 y 08. S
   vedada a los comandos de ejecucion).
 - Sin deuda de tests: ninguna supresion nueva, ningun `skip`, ningun assert
   relajado.
+
+## 2026-08-24 -- Merge a main: api-dashboard-metrics-and-outbox y mobile-dashboard-and-profile [merge-dashboard-branches]
+
+**Pedido**: el usuario senalo que dos ramas de plan (`feat/api-dashboard-metrics-and-outbox`,
+`feat/mobile-dashboard-and-profile`) seguian sin mergear a `main`, y pidio
+verificar tambien si `feat/mobile-data-layer-and-auth` estaba en la misma
+situacion; despues, mergear lo pendiente, confirmar que los objetivos de cada
+plan quedaran cumplidos en `main`, y resolver cualquier conflicto.
+
+**Herramientas**: sin comando de plan nuevo -- trabajo directo de verificacion
+y merge sobre los worktrees ya existentes (`.claude/worktrees/api-dashboard-metrics-and-outbox`,
+`.claude/worktrees/mobile-dashboard-and-profile`), dos agentes en paralelo
+para la bateria de verificacion inicial de cada rama, dos agentes en paralelo
+para el review de arquitectura/seguridad/UX (mismo criterio que el orquestador
+`review`), y `/ai-log` para esta entrada.
+
+**Entrego**:
+
+- `feat/mobile-data-layer-and-auth`: confirmado que ya estaba mergeada (merge
+  commit `2e45527`, anterior a esta sesion) -- ningun cambio necesario.
+- `e50e7a0` (`fix(api): clean up subscriptions before disposable users in e2e
+teardown`) en la rama api antes de mergear.
+- `3f6853a` (`merge: feat/api-dashboard-metrics-and-outbox`).
+- `7b8d947` (`fix(mobile): render subscription activation date on the
+dashboard card`) en la rama mobile antes de mergear.
+- `876ce6f` (`merge: feat/mobile-dashboard-and-profile`), con un conflicto
+  real resuelto en `docs/ai-workflow.md` (dos entradas de log concatenadas
+  sin overlap real de contenido; `pnpm-lock.yaml` se automergeo sin
+  conflicto).
+- `2c913b9` (`docs: add plans for api-dashboard and mobile-dashboard
+sessions`): los dos archivos de plan existian sin commitear en el repo
+  principal, nunca se habian versionado.
+- Ambos worktrees y sus ramas (`feat/api-dashboard-metrics-and-outbox`,
+  `feat/mobile-dashboard-and-profile`) se eliminaron tras el merge.
+
+**Revision**: `bash scripts/dev/quality-check.sh` corrido por un agente
+`verifier`-like en cada worktree por separado antes de tocar `main`
+(shared/api/mobile completos, incluido `e2e` de `api` con Postgres real), mas
+un agente de review por rama sobre `main..<rama>` (arquitectura, eventos,
+seguridad, pago simulado; UX contra `pantallas-nuevas.md` para la rama
+mobile). Tras cada merge, `pnpm install` + `prisma generate` + `prisma migrate
+deploy` (el lockfile mergeado y la migracion `outbox_last_error` necesitaban
+sincronizar `node_modules`/cliente Prisma en el repo principal) y
+`bash scripts/dev/quality-check.sh --scope all` de cierre.
+
+**Ajustes manuales** (lo mas util de esta entrada):
+
+1. **Bug real encontrado verificando la rama api, no en el plan original**:
+   `test/users.e2e-spec.ts`, `test/auth.e2e-spec.ts` y el nuevo
+   `test/admin-metrics.e2e-spec.ts` borraban usuarios descartables por dominio
+   (`prisma.user.deleteMany({ email: { endsWith } })`) sin borrar antes sus
+   filas de `Subscription`/`Payment` (sin cascada desde `User`, a proposito).
+   `subscriptions.e2e-spec.ts`, `subscriptions-flow.e2e-spec.ts` y el nuevo
+   `outbox.e2e-spec.ts` si seguian ese orden. Al sumar dos archivos e2e
+   nuevos, el orden de ejecucion de Jest cambio lo suficiente para que la
+   condicion de carrera se disparara: `users.e2e-spec.ts` y
+   `admin-metrics.e2e-spec.ts` fallaban con `Foreign key constraint violated:
+Subscription_userId_fkey`. Se corrigio replicando en los tres archivos el
+   mismo orden de borrado (`Payment` -> `Subscription` -> `User`) ya
+   establecido en los otros tres. Confirmado con la bateria `e2e` completa dos
+   veces: 12/12 suites, 80/80 tests.
+2. **Hallazgo ALTA real del review de UX, verificado contra el vault antes de
+   actuar**: `SubscriptionCard` no mostraba "Activa desde ago 2026"
+   (`pantallas-nuevas.md`, "Dashboard", linea 40) pese a que la Fase 3 del
+   plan mobile ya declaraba `startedAt` como prop del componente -- se perdio
+   en la implementacion. Se pregunto al usuario como seguir (arreglar solo
+   esto, arreglar tambien el segundo hallazgo ALTA -- "cambiar plan" en
+   Perfil, o mergear tal cual con ambos como pendientes); eligio arreglar
+   `startedAt` y dejar "cambiar plan" pendiente. Se agrego `startedAt` a
+   `dashboardSummarySchema` (aditivo), `DashboardService.getSummary`, el mock
+   MSW y el render del componente (`Intl.DateTimeFormat` vale, "ago 2026"
+   verificado con Node antes de escribirlo). El segundo hallazgo ("cambiar
+   plan / cancelar" en `pantallas-nuevas.md:49`, la Fase 4 del plan solo
+   habia escrito "Cancelar") se dejo **sin implementar**, documentado abajo.
+3. **`pnpm-lock.yaml` no tuvo conflicto de texto, pero `node_modules` del
+   repo principal quedo desincronizado despues de cada merge** (faltaba
+   `nestjs-pino`, y el cliente Prisma generado no conocia la columna
+   `lastError` nueva) -- `pnpm install` + `prisma generate` despues de cada
+   merge, antes de correr la bateria de cierre.
+4. **Un `git worktree remove` fallo dos veces con "Filename too long"**
+   (limite de ruta de Windows contra una ruta anidada de pnpm dentro de
+   `node_modules`). `git worktree prune` mas `rm -rf` (Git Bash, no la API de
+   Windows que usa `git.exe`) resolvio ambos casos sin dejar metadata de
+   worktree huerfana.
+
+**Pendiente**:
+
+- **"Cambiar plan" en Perfil/iPass** (`pantallas-nuevas.md:49`): la rama
+  mobile solo implemento "Cancelar". Requiere UI de seleccion de plan + un
+  hook nuevo; no se hizo en esta sesion, decision explicita del usuario.
+- Verificaciones visuales en Expo Go que ya quedaron pendientes en la entrada
+  original de `mobile-dashboard-and-profile` (pull-to-refresh, QR decorativo,
+  tab bar logueada, publicar avance end-to-end) siguen sin confirmar.
+- Verificacion manual del logging estructurado (`nestjs-pino`, `req.id` por
+  request) que ya quedaba pendiente en la entrada original de
+  `api-dashboard-metrics-and-outbox`.
+- `apps/admin e2e` en `SKIP` en el cierre de esta sesion: no habia API viva en
+  `localhost:5000` (precondicion documentada del propio `quality-check.sh`,
+  no un fallo introducido aca).
+- Dos hallazgos BAJA del review de la rama api (constante `DEFAULT_MAX_ATTEMPTS`
+  duplicada en dos archivos ademas del default real en `env.ts`; falta el caso
+  negativo "sin token -> 401" explicito en los dos endpoints admin nuevos,
+  aunque coincide con el patron preexistente del resto de la suite) quedaron
+  sin corregir, por bajo impacto.
+- Dos problemas de `lint` **preexistentes en `main`, confirmados sin relacion
+  con estas dos ramas** (diff vacio contra el `main` previo a esta sesion):
+  `apps/mobile/jest.setup.js` (`jest is not defined`, falta `env: jest` en la
+  config de eslint) y `apps/api/prisma/seed.ts` (formato `prettier`). No se
+  tocaron.
