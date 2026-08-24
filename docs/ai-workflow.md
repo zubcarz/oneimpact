@@ -762,3 +762,76 @@ de desarrollo compartida y los e2e de la API afirman conteos exactos, y
 Postgres, y la variable la define el job); se limpia con reset + `pnpm db:setup`.
 Seguimiento de contrato para el item 14: agregar `publicUrl` a
 `signedUploadSchema` y los mensajes en espanol que faltan en `packages/shared`.
+
+## 2026-08-24 -- Integracion a main de los items 08, 09 y 11 [merge]
+
+**Pedido**: mergear a `main` las tres ramas de worktree en el orden del roadmap
+(08 -> 09 -> 11), verificando antes que cada plan estuviera completo fase por
+fase, y **conservar los worktrees** (sin `git worktree remove`, sin `branch -d`).
+
+**Herramientas**: comprobacion mecanica de completitud (extraccion de la lista
+`**Archivos**` de cada fase de los tres planes y contraste contra
+`git ls-tree` de su rama), `git merge --no-ff`, `scripts/dev/quality-check.sh`
+por scope tras cada merge.
+
+**Entregado**:
+
+- `1c704cc` merge de `feat/mobile-projects-and-about` (item 08). Sin conflictos.
+- `5dcd596` merge de `feat/mobile-register-payment-welcome` (item 09). Tres
+  conflictos, los tres aditivos y resueltos conservando ambos lados:
+  `src/components/ui/index.ts` (exports de 08 + de 09), `ROADMAP.md` (fila 08 +
+  fila 09) y `docs/ai-workflow.md` (entrada de 08 + entrada de 09).
+- `45e5b65` merge de `feat/admin-auth-and-projects` (item 11). Dos conflictos en
+  docs; en `ROADMAP.md` se conservo la nota vigente del item 07 y se descarto el
+  parrafo "Sobre el `parcial` del 07" que traia la rama, obsoleto desde que el
+  07 entro completo a `main`.
+- Estado de los tres planes actualizado en su header, en
+  `.claude/plans/README.md` y en la tabla de `.claude/roadmap/ROADMAP.md`.
+
+**Revisado y ajustado a mano**:
+
+1. **Colision real entre el item 09 y el 11** (el unico ajuste de codigo de esta
+   sesion). El 09 le puso mensajes en espanol a `loginSchema`
+   (`packages/shared/src/schemas/auth.ts:12-13`) y el 11 habia escrito
+   `loginIssueMessage` (`apps/admin/src/features/auth/login-messages.ts`) como
+   error map por-parse justamente porque ese schema no los tenia. En zod 4 el
+   mensaje del schema gana sobre el map, cosa que el propio modulo del admin
+   documentaba: al mergear, su test fallo. Se actualizo el test para afirmar los
+   mensajes que hoy salen de `shared` (`Email invalido`,
+   `La contrasena es requerida`) y el comentario del modulo, que queda como
+   guarda de los campos que `shared` no traduce. No se relajo ningun assert ni se
+   duplico el schema.
+2. **`.expo/types/router.d.ts` obsoleto en el arbol principal**: el typecheck de
+   mobile fallo tras el merge del 08 por un artefacto generado del 23 de agosto
+   que no conocia `/projects/[id]`. Se regenero levantando Metro; los worktrees
+   no lo tenian y por eso ahi el typecheck pasaba. Es generado y esta
+   gitignoreado: no entra al commit.
+3. **`pnpm install` tras el merge del 09** (trae el pin de react y el lockfile).
+   Fallaba con `ERR_PNPM_ENOENT` sobre `node_modules/*_tmp_*` mientras Metro
+   seguia vivo; con el proceso cerrado y los `_tmp_` borrados, limpio.
+4. **`packages/shared` hay que reconstruirlo despues del merge**: los tests de
+   mobile leen `dist`, asi que el mensaje nuevo de `loginSchema` no aparecia
+   hasta correr `pnpm --filter @oneimpact/shared build`.
+
+**Verificacion**:
+
+- `quality-check.sh --scope all --only typecheck,lint,unit` en `main`: **GREEN**
+  (18/18 pasos; 109 tests mobile, 159 admin, api y los tres packages).
+- `--scope mobile --only bundle` (`expo export --platform android`): **GREEN**.
+- e2e de la API: **74/74 verde**, corridos contra una base limpia
+  (`oneimpact_e2e`, migrada y sembrada para esto). Contra la base de desarrollo
+  fallan 6 asserts de conteo: son restos de las corridas de Playwright del admin
+  y de una prueba manual (5 proyectos extra, `[e2e] ...` y
+  `prueba-fase-5-avances-admin`), no una regresion. **No se borro nada de la base
+  de desarrollo**: la decision de limpiarla es del usuario.
+- **PENDIENTE**: e2e de Playwright del admin **no re-corrido sobre `main`**. Los
+  puertos 5000/5001 los ocupan los servidores del worktree del item 11 y
+  `reuseExistingServer: true` haria que el suite midiera ese arbol, no `main`.
+  Quedo 5/5 verde en la rama y el codigo del admin no cambio en el merge salvo
+  el test unitario del punto 1; `login.spec` no afirma copy de validacion, asi
+  que el cambio de `shared` no lo toca.
+- **PENDIENTE manual**: verificacion visual en Expo Go de las pantallas de los
+  items 08 y 09 sobre `main`.
+
+**Worktrees**: los tres siguen montados y sus ramas siguen existiendo, como se
+pidio.

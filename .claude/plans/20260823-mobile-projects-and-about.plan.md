@@ -1,5 +1,6 @@
 # Plan -- Mobile: Proyectos y Quienes somos (por fases, checkpoint por fase)
 
+> **Estado**: ejecutado en feat/mobile-projects-and-about (c3aa9bf..4367a10), mergeado a main en 1c704cc
 > **Fecha**: 2026-08-23 (revisado el mismo dia tras completarse el item 07)
 > **Origen**: Modo R -- spec del roadmap `.claude/roadmap/specs/08-mobile-projects-and-about.md`
 > **Base**: vault `02-Analisis-Visual/pantallas/pantallas-nuevas.md` (secciones

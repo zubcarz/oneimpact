@@ -1,6 +1,6 @@
 # Plan -- Admin: auth con cookie y gestion de proyectos (por fases, checkpoint por fase)
 
-> **Estado**: ejecutado en feat/admin-auth-and-projects (6d83c96..ce681d5)
+> **Estado**: ejecutado en feat/admin-auth-and-projects (6d83c96..f15003f), mergeado a main en 45e5b65
 > **Fecha**: 2026-08-23
 > **Origen**: Modo R -- spec del roadmap `.claude/roadmap/specs/11-admin-auth-and-projects.md` (item 11, ola 3)
 > **Base**: vault `01-Tecnologia-Arquitectura/admin-web.md`; reglas `.claude/rules/40-admin-conventions.md`, `60-design-system.md`, `50-testing-and-verification.md`; plan previo `.claude/plans/20260822-api-payments-subscriptions-events.plan.md` (decisiones D5a y D6, que condicionan la subida de imagenes)

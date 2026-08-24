@@ -1,5 +1,6 @@
 # Plan -- Mobile: registro, pago simulado y bienvenida (por fases, checkpoint por fase)
 
+> **Estado**: ejecutado en feat/mobile-register-payment-welcome (9ad0ea4..f2238b6), mergeado a main en 5dcd596
 > **Fecha**: 2026-08-23
 > **Origen**: Modo R -- spec del roadmap `.claude/roadmap/specs/09-mobile-register-payment-welcome.md` (item 09, ola 4).
 > **Base**: vault `02-Analisis-Visual/pantallas/pantallas-nuevas.md:23-56` (Registro, Pago simulado, Bienvenida, Login), `01-Tecnologia-Arquitectura/arquitectura-sistema.md` (Flujo clave), `01-Tecnologia-Arquitectura/plan-de-trabajo.md:22`. Planes previos: `.claude/plans/20260822-mobile-data-layer-and-auth.plan.md` (item 07, **completo** desde `570cdf5`), `.claude/plans/20260822-api-payments-subscriptions-events.plan.md` (item 06, mergeado en `d0fab7b`).

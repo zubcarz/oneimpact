@@ -131,10 +131,10 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 | 05  | api-auth-and-roles                | hecho     | `d408426..80e57ad`, mergeado a main en `07f5d04`               |
 | 06  | api-payments-subscriptions-events | hecho     | `6a24006..0573655`, mergeado a main en `d0fab7b`               |
 | 07  | mobile-data-layer-and-auth        | hecho     | `8d7c0d1..570cdf5` (merge parcial `2e45527` + cierre en main)  |
-| 08  | mobile-projects-and-about         | hecho     | `c3aa9bf..122c7d0` en `feat/mobile-projects-and-about`          |
-| 09  | mobile-register-payment-welcome   | hecho     | `9ad0ea4..6bf5002` en `feat/mobile-register-payment-welcome`   |
+| 08  | mobile-projects-and-about         | hecho     | `c3aa9bf..4367a10`, mergeado a main en `1c704cc`               |
+| 09  | mobile-register-payment-welcome   | hecho     | `9ad0ea4..f2238b6`, mergeado a main en `5dcd596`               |
 | 10  | mobile-dashboard-and-profile      | pendiente |                                                                |
-| 11  | admin-auth-and-projects           | hecho     | `6d83c96..ce681d5` en `feat/admin-auth-and-projects`, sin mergear |
+| 11  | admin-auth-and-projects           | hecho     | `6d83c96..f15003f`, mergeado a main en `45e5b65`               |
 | 12  | api-dashboard-metrics-and-outbox  | pendiente |                                                                |
 | 13  | admin-metrics-users-subscriptions | pendiente |                                                                |
 | 14  | deploy-and-ci                     | pendiente |                                                                |
@@ -150,7 +150,7 @@ sobre MSW y sesion **ya se pueden cumplir literalmente**.
 
 **Sobre el 11**: las 6 fases del plan
 `.claude/plans/20260823-admin-auth-and-projects.plan.md` estan ejecutadas en el
-worktree de `feat/admin-auth-and-projects` (login con cookie httpOnly, guarda de
+`feat/admin-auth-and-projects` y mergeadas a main (login con cookie httpOnly, guarda de
 rol, tabla de proyectos con filtros por zona y estado, alta/edicion, publicacion
 de avances y Playwright). Desviaciones respecto del plan escrito, todas
 verificadas: `middleware.ts` esta deprecado en Next 16, asi que la guarda vive en
