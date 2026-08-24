@@ -61,20 +61,27 @@ export class PaymentsService {
     const reason = this.evaluate(card);
 
     if (reason) {
-      const payment = await this.repository.create({
-        userId,
-        amount,
-        currency: CURRENCY,
-        status: PaymentStatus.FAILED,
-        cardBrand: card.brand,
-        cardLast4: card.last4,
-        simulated: true,
-      });
+      const payment = await this.repository.runTransaction(async (tx) => {
+        const created = await this.repository.create(tx, {
+          userId,
+          amount,
+          currency: CURRENCY,
+          status: PaymentStatus.FAILED,
+          cardBrand: card.brand,
+          cardLast4: card.last4,
+          simulated: true,
+        });
 
-      await this.eventBus.publish({
-        type: EventName.PAYMENT_FAILED,
-        occurredAt: new Date(),
-        payload: { paymentId: payment.id, userId, reason },
+        await this.eventBus.publish(
+          {
+            type: EventName.PAYMENT_FAILED,
+            occurredAt: new Date(),
+            payload: { paymentId: created.id, userId, reason },
+          },
+          tx,
+        );
+
+        return created;
       });
 
       return { status: PaymentStatus.FAILED, paymentId: payment.id, reason };
@@ -83,20 +90,27 @@ export class PaymentsService {
     // Artificial latency for the approved path only, per rule 3 above.
     await this.delay();
 
-    const payment = await this.repository.create({
-      userId,
-      amount,
-      currency: CURRENCY,
-      status: PaymentStatus.SUCCEEDED,
-      cardBrand: card.brand,
-      cardLast4: card.last4,
-      simulated: true,
-    });
+    const payment = await this.repository.runTransaction(async (tx) => {
+      const created = await this.repository.create(tx, {
+        userId,
+        amount,
+        currency: CURRENCY,
+        status: PaymentStatus.SUCCEEDED,
+        cardBrand: card.brand,
+        cardLast4: card.last4,
+        simulated: true,
+      });
 
-    await this.eventBus.publish({
-      type: EventName.PAYMENT_SUCCEEDED,
-      occurredAt: new Date(),
-      payload: { paymentId: payment.id, userId, amount },
+      await this.eventBus.publish(
+        {
+          type: EventName.PAYMENT_SUCCEEDED,
+          occurredAt: new Date(),
+          payload: { paymentId: created.id, userId, amount },
+        },
+        tx,
+      );
+
+      return created;
     });
 
     return { status: PaymentStatus.SUCCEEDED, paymentId: payment.id };
