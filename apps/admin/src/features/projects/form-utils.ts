@@ -249,3 +249,59 @@ export function projectToFormValues(project: Project, zoneSlug: string): Project
     lng: project.lng === undefined ? '' : String(project.lng),
   };
 }
+
+/**
+ * What the "publicar avance" form holds while it is being filled in. Display
+ * space again, every field a string, for the same reason as `ProjectFormValues`:
+ * the DOM controls -- including the range input -- hand over strings.
+ */
+export interface PublishUpdateFormValues {
+  title: string;
+  body: string;
+  progress: string;
+  /** URL pasted by hand. Empty means "no image". */
+  mediaUrl: string;
+}
+
+/** The same values in contract space, which is what `publishUpdateSchema` validates. */
+export interface PublishUpdatePayload {
+  title: string;
+  body: string;
+  progress: number;
+  mediaUrl?: string;
+}
+
+/**
+ * Display values -> contract values for a project update.
+ *
+ * The one subtlety is `mediaUrl`: an empty box becomes **`undefined`**, never
+ * `''`. `publishUpdateSchema.mediaUrl` is an optional `z.url()`, so a missing
+ * field validates while an empty string is rejected with 'URL invalida' -- which
+ * would block publishing an update that simply has no image.
+ */
+export function toPublishUpdatePayload(values: PublishUpdateFormValues): PublishUpdatePayload {
+  const payload: PublishUpdatePayload = {
+    title: values.title.trim(),
+    body: values.body.trim(),
+    // The range input cannot be empty, so this is only defensive: `Number('')`
+    // would be 0 and would silently reset the progress of the project.
+    progress: values.progress.trim() === '' ? Number.NaN : Number(values.progress),
+  };
+
+  const mediaUrl = values.mediaUrl.trim();
+  if (mediaUrl !== '') payload.mediaUrl = mediaUrl;
+
+  return payload;
+}
+
+/** Defaults of the publish form: empty text and the current progress of the project. */
+export function emptyPublishUpdateFormValues(progress: number): PublishUpdateFormValues {
+  return {
+    title: '',
+    body: '',
+    // Starting from the current progress instead of 0 is what keeps a publish
+    // that only reports news from resetting the bar of the project to zero.
+    progress: String(progress),
+    mediaUrl: '',
+  };
+}

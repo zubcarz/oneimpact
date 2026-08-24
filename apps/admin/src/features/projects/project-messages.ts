@@ -59,6 +59,24 @@ export function projectIssueMessage(issue: ProjectIssue): string {
 export const PROJECT_FALLBACK_ERROR =
   'No se pudo guardar el proyecto. Inténtalo de nuevo en unos segundos.';
 
+/** Same idea for the publish form, whose failed action is not "guardar". */
+export const UPDATE_FALLBACK_ERROR =
+  'No se pudo publicar el avance. Inténtalo de nuevo en unos segundos.';
+
+/**
+ * The issues of `publishUpdateSchema` that `packages/shared` leaves without a
+ * message, checked against zod 4.4.3: `title`, `body`, `progress` and `mediaUrl`
+ * all carry Spanish text for their rules ('Minimo 3 caracteres', 'Minimo 10
+ * caracteres', 'Minimo 0'/'Maximo 100'/'Debe ser un numero entero', 'URL
+ * invalida'), so the only thing left uncovered is an `invalid_type`, which zod
+ * would answer in English.
+ *
+ * A schema-level message wins over the map handed to `parse` in zod 4, so this
+ * constant can only surface where the contract said nothing -- it cannot silence
+ * any of the messages above.
+ */
+export const UPDATE_FIELD_FALLBACK_MESSAGE = 'Revisa este campo.';
+
 /**
  * Turns the error of a failed save into a line for the banner of the form.
  *
@@ -70,21 +88,29 @@ export const PROJECT_FALLBACK_ERROR =
  * `fetch` would leak internals and read as noise, so they collapse into the
  * generic line.
  */
-export function projectSaveErrorMessage(error: unknown): string {
+export function projectSaveErrorMessage(
+  error: unknown,
+  /**
+   * What to say when the error explains nothing. It is a parameter so the
+   * publish form and the upload can reuse the same 4xx rule with their own
+   * sentence instead of copying the branch and drifting from it.
+   */
+  fallback: string = PROJECT_FALLBACK_ERROR,
+): string {
   if (typeof error !== 'object' || error === null || !('status' in error)) {
-    return PROJECT_FALLBACK_ERROR;
+    return fallback;
   }
 
   const { status } = error;
   // 4xx are the ones the API explains in words the admin can act on (a zone that
   // does not exist, a body it rejected). 5xx has nothing to teach them.
   if (typeof status !== 'number' || status < 400 || status >= 500) {
-    return PROJECT_FALLBACK_ERROR;
+    return fallback;
   }
 
   const message = 'message' in error ? error.message : undefined;
   if (typeof message !== 'string' || message.trim().length === 0) {
-    return PROJECT_FALLBACK_ERROR;
+    return fallback;
   }
 
   return message.trim();

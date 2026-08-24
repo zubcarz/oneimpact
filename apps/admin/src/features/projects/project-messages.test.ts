@@ -4,6 +4,7 @@ import {
   PROJECT_FALLBACK_ERROR,
   projectIssueMessage,
   projectSaveErrorMessage,
+  UPDATE_FALLBACK_ERROR,
 } from './project-messages';
 
 describe('projectIssueMessage', () => {
@@ -48,5 +49,24 @@ describe('projectSaveErrorMessage', () => {
 
   it('falls back when the API answered a 4xx with an empty message', () => {
     expect(projectSaveErrorMessage(new ApiError(400, '   '))).toBe(PROJECT_FALLBACK_ERROR);
+  });
+});
+
+describe('projectSaveErrorMessage with a custom fallback', () => {
+  it('uses the sentence of the caller when the error explains nothing', () => {
+    // The publish form and the upload reuse the same 4xx rule with their own
+    // wording, so "guardar el proyecto" does not leak into a failed publish.
+    expect(projectSaveErrorMessage(new TypeError('Failed to fetch'), UPDATE_FALLBACK_ERROR)).toBe(
+      UPDATE_FALLBACK_ERROR,
+    );
+    expect(projectSaveErrorMessage(new ApiError(500, 'boom'), UPDATE_FALLBACK_ERROR)).toBe(
+      UPDATE_FALLBACK_ERROR,
+    );
+  });
+
+  it('still prefers what the API explained in a 4xx', () => {
+    expect(
+      projectSaveErrorMessage(new ApiError(403, 'Prohibido'), UPDATE_FALLBACK_ERROR),
+    ).toBe('Prohibido');
   });
 });

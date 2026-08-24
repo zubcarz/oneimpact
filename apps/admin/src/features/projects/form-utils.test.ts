@@ -3,13 +3,15 @@ import type { Project } from '@oneimpact/shared';
 import { describe, expect, it } from 'vitest';
 import {
   emptyProjectFormValues,
+  emptyPublishUpdateFormValues,
   pickDirtyValues,
   projectToFormValues,
   toDateTimeLocalValue,
   toIsoDateTime,
   toProjectPayload,
+  toPublishUpdatePayload,
 } from './form-utils';
-import type { ProjectFormValues } from './form-utils';
+import type { ProjectFormValues, PublishUpdateFormValues } from './form-utils';
 
 describe('toIsoDateTime', () => {
   it('turns the value of a datetime-local input into an ISO instant with Z', () => {
@@ -220,5 +222,52 @@ describe('emptyProjectFormValues', () => {
     expect(values.zoneSlug).toBe('');
     expect(values.status).toBe(ProjectStatus.ACTIVE);
     expect(values.progress).toBe('0');
+  });
+});
+
+describe('toPublishUpdatePayload', () => {
+  const values: PublishUpdateFormValues = {
+    title: '  Primer avance  ',
+    body: '  Se plantaron 400 arboles.  ',
+    progress: '40',
+    mediaUrl: '',
+  };
+
+  it('turns the range value into a number and trims the text', () => {
+    expect(toPublishUpdatePayload(values)).toEqual({
+      title: 'Primer avance',
+      body: 'Se plantaron 400 arboles.',
+      progress: 40,
+    });
+  });
+
+  it('omits mediaUrl when the box is empty, instead of sending an empty string', () => {
+    // `publishUpdateSchema.mediaUrl` is an optional `z.url()`: a missing field
+    // validates, `''` does not.
+    const payload = toPublishUpdatePayload({ ...values, mediaUrl: '   ' });
+    expect('mediaUrl' in payload).toBe(false);
+  });
+
+  it('keeps a pasted url, trimmed', () => {
+    const payload = toPublishUpdatePayload({
+      ...values,
+      mediaUrl: '  https://cdn.example.com/a.jpg  ',
+    });
+    expect(payload.mediaUrl).toBe('https://cdn.example.com/a.jpg');
+  });
+
+  it('does not turn an empty progress into a silent zero', () => {
+    expect(toPublishUpdatePayload({ ...values, progress: '' }).progress).toBeNaN();
+  });
+});
+
+describe('emptyPublishUpdateFormValues', () => {
+  it('starts from the current progress of the project', () => {
+    expect(emptyPublishUpdateFormValues(35)).toEqual({
+      title: '',
+      body: '',
+      progress: '35',
+      mediaUrl: '',
+    });
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import type { CreateProjectInput, UpdateProjectInput } from '@oneimpact/shared';
+import type { CreateProjectInput, PublishUpdateInput, UpdateProjectInput } from '@oneimpact/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { browserApi } from '@/lib/api-browser';
 import { queryKeys } from '@/lib/query-keys';
@@ -50,6 +50,29 @@ export function useUpdateProject(id: string) {
     // `updateProjectSchema` is `.partial()`, so this receives only the fields
     // the admin touched (see `pickDirtyValues` in `./form-utils`).
     mutationFn: (input: UpdateProjectInput) => browserApi.projects.update(id, input),
+    onSuccess: invalidateProjects,
+  });
+}
+
+/**
+ * Publishing an update is not only a write on `ProjectUpdate`: the API
+ * overwrites `Project.progress` with the progress of the update, inside the same
+ * transaction
+ * (apps/api/src/modules/projects/application/projects-writes.service.ts:125-130).
+ *
+ * That is why this invalidates the same `['projects']` prefix as the other two
+ * mutations instead of only the updates of this project: the list and the detail
+ * are stale the moment an update goes out, and the progress bar of the table has
+ * to show the new value. As with the other mutations, the projects table is a
+ * Server Component and does not live in this cache, so the caller also calls
+ * `router.refresh()`.
+ */
+export function usePublishUpdate(projectId: string) {
+  const invalidateProjects = useInvalidateProjects();
+
+  return useMutation({
+    mutationFn: (input: PublishUpdateInput) =>
+      browserApi.projects.publishUpdate(projectId, input),
     onSuccess: invalidateProjects,
   });
 }
