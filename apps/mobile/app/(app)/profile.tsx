@@ -3,7 +3,7 @@ import { router, type Href } from 'expo-router';
 import { Screen } from '@/components/layout';
 import { IPassCard, ProfileMenu, SubscriptionRow } from '@/features/profile';
 import { useCancelSubscription, useDashboard } from '@/api/hooks';
-import { useAuth } from '@/auth';
+import { useAuth, useSignOut } from '@/auth';
 
 /**
  * `/(app)/admin` llega en la Fase 5 de este plan: `.expo/types/router.d.ts`
@@ -21,7 +21,10 @@ const ADMIN_PATH = '/(app)/admin';
  * summary desde la Fase 1: esta pantalla no vuelve a llamar `useSubscription`).
  */
 export default function ProfileScreen() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  // `useSignOut`, no `signOut` del provider: esta pantalla vive DENTRO de
+  // `(app)`, asi que limpiar la sesion sin salir antes la deja en el login.
+  const signOut = useSignOut();
   const dashboardQuery = useDashboard();
   const cancelSubscription = useCancelSubscription();
 

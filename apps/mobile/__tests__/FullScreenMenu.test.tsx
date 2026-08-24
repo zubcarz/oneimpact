@@ -50,8 +50,10 @@ jest.mock('@/auth', () => ({
   useAuth: () => ({
     status: mockStatus,
     user: mockStatus === 'authed' ? MOCK_USER : null,
-    signOut: mockSignOut,
   }),
+  // El orden seguro (navegar antes de limpiar) lo prueba `use-sign-out.test.ts`
+  // contra el hook real; aca solo hace falta saber que el menu lo invoca.
+  useSignOut: () => mockSignOut,
   loginHref: () => '/(auth)/login',
 }));
 
@@ -137,18 +139,14 @@ describe('FullScreenMenu', () => {
     expect(screen.getByLabelText('Cerrar sesión')).toBeTruthy();
   });
 
-  it('leaves the protected group before clearing the session, so signing out never lands on login', () => {
+  it('closes itself and delegates the sign out to useSignOut', () => {
     mockStatus = 'authed';
     const onClose = jest.fn();
     renderMenu(true, onClose);
 
     fireEvent.press(screen.getByLabelText('Cerrar sesión'));
 
-    // El orden es la razon de ser del test: si `signOut` corriera primero, el
-    // guard de `(app)` (`useRequireAuth`) reaccionaria al `guest` mandando al
-    // login, y cerrar sesion terminaria en una pantalla de login.
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(router.replace).toHaveBeenCalledWith('/');
     expect(mockSignOut).toHaveBeenCalledTimes(1);
   });
 });

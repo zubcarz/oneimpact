@@ -35,7 +35,18 @@ export default function LoginScreen() {
   const params = useLocalSearchParams<{ returnTo?: string }>();
   const returnTo = resolveReturnTo(params.returnTo);
 
-  const handleBack = () => router.back();
+  /**
+  * `replace` a la home publica, nunca `router.back()`.
+  *
+  * A esta pantalla se puede llegar por eleccion (el menu) o expulsado: cuando
+  * `useRequireAuth` saca a un invitado de `(app)` lo hace con `replace`, o sea
+  * que la entrada de la que venia ya no existe. Ahi `back()` no tiene a donde
+  * volver, o vuelve a una pantalla de `(app)` que redirige otra vez aca: el
+  * login quedaba sin salida. Mandar siempre a `/` es el unico destino que
+  * existe en los dos casos, y ademas es lo que "volver" significa desde un
+  * login: dejar de intentar entrar y seguir navegando.
+  */
+  const handleBack = () => router.replace('/');
   const handleSuccess = () => router.replace(returnTo);
 
   return (

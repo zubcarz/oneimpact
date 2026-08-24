@@ -6,7 +6,7 @@ import { router, type Href } from 'expo-router';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { ArrowRight, X } from 'lucide-react-native';
 import { colors } from '@oneimpact/ui-tokens';
-import { loginHref, useAuth } from '@/auth';
+import { loginHref, useAuth, useSignOut } from '@/auth';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { Button } from '@/components/ui';
 import {
@@ -33,7 +33,8 @@ const LOGO_SIZE = { width: 82, height: 32 };
  */
 export function FullScreenMenu({ visible, onClose }: FullScreenMenuProps) {
   const insets = useSafeAreaInsets();
-  const { status, user, signOut } = useAuth();
+  const { status, user } = useAuth();
+  const signOut = useSignOut();
   const isAuthed = status === 'authed';
   const menuCta = resolveMenuCta(isAuthed);
 
@@ -47,19 +48,10 @@ export function FullScreenMenu({ visible, onClose }: FullScreenMenuProps) {
     router.push(loginHref());
   };
 
-  /**
-   * Cierra el menu y manda a Inicio antes de limpiar la sesion.
-   *
-   * El orden importa: si el usuario tenia abierta una pantalla de `(app)`, su
-   * guard reacciona a `status === 'guest'` con un `router.replace` al login
-   * (`useRequireAuth`), y cerrar sesion terminaria en una pantalla de login en
-   * vez de en la app publica. Navegando primero, el guard ya no tiene nada que
-   * proteger cuando el estado cambia.
-   */
+  /** El orden seguro (navegar y despues limpiar) vive en `useSignOut`. */
   const handleSignOut = () => {
     onClose();
-    router.replace('/');
-    void signOut();
+    signOut();
   };
 
   return (
