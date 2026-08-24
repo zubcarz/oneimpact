@@ -12,14 +12,6 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
-// Reanimated arrastra worklets nativos que no existen en jest-expo: el menu solo
-// usa Animated.View + FadeIn/FadeOut, asi que basta un View y descriptores vacios.
-jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
-  const animation = { duration: () => ({}) };
-  return { __esModule: true, default: { View }, FadeIn: animation, FadeOut: animation };
-});
-
 jest.mock('expo-image', () => {
   const { View } = jest.requireActual('react-native');
   return { Image: () => <View testID="logo" /> };

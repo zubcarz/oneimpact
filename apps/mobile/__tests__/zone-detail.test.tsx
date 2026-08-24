@@ -41,17 +41,6 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
-jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
-  const animationBuilder = { duration: () => animationBuilder };
-  return {
-    __esModule: true,
-    default: { View },
-    FadeIn: animationBuilder,
-    FadeOut: animationBuilder,
-  };
-});
-
 // The screen only talks to the data layer through `useZone`; mocking the hook
 // (instead of `@/data/zones`) is what the plan asks for, and it sidesteps the
 // nested-React-copy crash any test that mounts a real `QueryClientProvider`
