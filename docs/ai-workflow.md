@@ -514,3 +514,95 @@ que no cambiaba ni una clase de Tailwind.
   relajado. El unico assert que se reescribio (`typeof image === 'number'`) estaba
   mal formulado desde el principio: bajo Jest un `require()` de imagen es un stub
   de `jest-expo`, no un numero.
+
+## 2026-08-23 -- Registro, pago simulado y bienvenida [mobile-register-payment-welcome]
+
+**Pedido**: ejecutar el item 09 del roadmap, el tramo que convierte un visitante
+en suscriptor: Suscripcion -> Registro -> Pago simulado -> Bienvenida ->
+Dashboard, mas Login. Es el unico lugar del producto donde se demuestra que el
+PAN completo nunca llega al servidor. Plan en
+`.claude/plans/20260823-mobile-register-payment-welcome.plan.md`.
+
+**Herramientas**: `/gen-plan` sobre el spec del roadmap, replanificacion tras
+completarse el item 07 (`613bd85`), `/run-plan-worktree` en modo autonomo (rama
+`feat/mobile-register-payment-welcome`), agentes `implementer` (4 invocaciones,
+una por fase) y `debugger` (1), skill `/ai-log`.
+
+**Entrego**: 7 commits, 38 archivos, ~1800 lineas. `9ad0ea4` primitivas de
+formulario (`Input`, `Stepper`, `CardPreview`); `9345d1d` pantalla de registro;
+`d3cd1c8` pago simulado; `6bf5002` bienvenida y login con el CTA del menu
+dependiente de sesion. Ademas tres commits que no son de producto y salieron del
+camino: `9578416`, `3639aae` y `f146dd1`.
+
+**Revision**: `--scope all` con 20 de 21 pasos en verde, incluido el bundle de
+Metro (`expo export`) y los 74 e2e de la API. El paso 21 (Playwright del admin)
+fallaba por colision de puertos, no por codigo: `playwright.config.ts` apunta a
+5001 con `reuseExistingServer: true`, y en esta maquina 5001 y 5002 ya estaban
+ocupados por otras lanes, asi que Playwright reusaba el servidor de OTRO
+worktree. Levantado el admin de este worktree en 5003 con `CI=1` y
+`PLAYWRIGHT_BASE_URL`, el spec pasa. Ademas de los tests, greps de invariantes
+sobre el diff: ningun `console.*` en el flujo de auth, ningun spread en la
+construccion del payload de tarjeta, ninguna supresion nueva.
+
+**Ajustes manuales** (lo mas util de esta entrada):
+
+1. **El plan se replanifico antes de ejecutarlo, y eso borro una fase entera.**
+   El item 07 estaba mergeado a medias cuando se escribio este plan, asi que su
+   Fase 1 absorbia la deuda: `AuthProvider`, grupo `(app)` y dashboard
+   placeholder. Al completarse 07, esa fase resulto ser literalmente el commit
+   `81016a1`. Se elimino y las fases se renumeraron 2..6 -> 1..5. Sin ese repaso
+   se habria reimplementado por segunda vez lo que ya estaba en `main`.
+2. **Un choque de versiones de React que llevaba tiempo latente.** `apps/mobile`
+   fijaba `react` en 19.2.3 (lo que resuelve Expo 57) y `apps/admin` en 19.2.8.
+   Con `node-linker=hoisted` eso convivia porque **nada dependia de las dos a la
+   vez**. Instalar `react-hook-form` en mobile lo desperto: pnpm anido una
+   segunda copia de React 19.2.8 bajo el paquete, y cualquier componente con
+   `useForm()` reventaba con "Invalid hook call". El implementer lo diagnostico
+   con evidencia y **se nego a arreglarlo** por estar fuera de su alcance de
+   escritura, que es exactamente lo correcto. Se resolvio con `pnpm.overrides` a
+   19.2.3 -- la version contra la que estan construidos `react-native@0.86.2` y
+   `react-test-renderer@19.2.3`, y que `next@16.3.2` acepta -- verificando
+   despues que el admin sigue verde en typecheck, lint, unit y `next build`.
+3. **Una regresion que la fase 1 introdujo sin que su propio gate la viera.**
+   `CardPreview` importa Reanimated y se exporta desde el barrel de
+   `components/ui`, asi que el barrel paso a arrastrar Reanimated a toda suite
+   que lo tocara. `StatsBanner.test.tsx` dejo de cargar. El gate de la fase 1
+   estaba filtrado (`--filter "Stepper|CardPreview"`) y no lo vio: lo destapo la
+   bateria sin filtro de la fase siguiente. **Leccion de proceso: un gate
+   filtrado no prueba que la fase no rompio nada, solo que lo suyo pasa.**
+4. **El mock oficial de Reanimated no alcanzaba.** En la v4, `react-native-reanimated/mock`
+   requiere el indice real, que carga `react-native-worklets`, cuyo `init()`
+   corre incondicionalmente al importarse. El crash ocurre dentro de worklets,
+   antes de que el flag `IS_JEST` de Reanimated pueda importar. Se resolvio
+   apuntando al mock puro en JS que worklets si trae pero no expone como subpath
+   publico. Un `setupFiles` reemplazo el `jest.mock` copiado a mano en cuatro
+   suites; cada una se volvio a correr por separado para confirmar que sigue
+   pasando con los mismos asserts.
+5. **`loginSchema` respondia en ingles.** Era el unico schema de auth con
+   `.email()` y `.min(1)` pelados, asi que zod caia a su mensaje por defecto y el
+   login habria mostrado "Invalid email address". Lo encontro el implementer al
+   escribir el test, y en vez de inventar un mensaje **asserto el texto real y lo
+   reporto**. Se corrigio en `packages/shared` (solo texto, la forma no cambia) y
+   se verificaron los dos consumidores por grep: el `LoginDto` de la API, que
+   ahora tambien responde en espanol, y el form de mobile.
+6. **Tres commits que no son de producto.** El plan pedia un commit por fase,
+   pero el arreglo de React, el de Jest y el de `shared` son transversales y
+   revisables por separado: mezclarlos con "register screen" habria escondido un
+   cambio de `pnpm.overrides` dentro de un commit de UI.
+
+**Pendientes manuales (SIN CONFIRMAR, no verificados en dispositivo)**:
+
+- **El invariante del PAN contra un log real**: con `pnpm dev:api` en primer
+  plano, completar un pago y confirmar que el log pino no contiene el numero.
+  Ningun test automatico lo cubre; es la evidencia que pide la prueba.
+- Mascara 4-4-4-4 sin salto de cursor en Android; teclado numerico en numero y
+  CVC; `CardPreview` pulsando durante los ~800 ms; haptic al confirmar.
+- Que el back desde Bienvenida no vuelva al pago (resuelto con `router.replace`,
+  verificado por codigo, no en dispositivo).
+- Con sesion iniciada, el menu dice "Mi dashboard" (cubierto por test unitario
+  con el provider mockeado, no contra `GET /me` real).
+- Amex se detecta pero se sigue formateando a 16 digitos con CVC de 3. Aceptado
+  para la entrega y anotado; forzar ese caso es alcance de otro item.
+- **PREGUNTA ABIERTA**: si el usuario abandona en el paso de pago queda una
+  cuenta sin suscripcion. El spec no lo cubre y no se invento un flujo de
+  recuperacion; hoy un login posterior lleva al dashboard vacio.
