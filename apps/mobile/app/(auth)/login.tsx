@@ -40,7 +40,7 @@ export default function LoginScreen() {
 
   return (
     <Screen statusBar="dark" bg="bg-cream" contentContainerClassName="gap-8 px-5 pb-10">
-      <AuthScreenHeader onBack={handleBack} />
+      <AuthScreenHeader onBack={handleBack} title="Iniciar sesión" />
       <Image
         source={LOGO_SOURCE}
         contentFit="contain"

@@ -9,11 +9,14 @@
 
 export interface AboutHeroCopy {
   title: string;
+  /** Etiqueta accesible del boton de volver del hero. */
+  back: string;
 }
 
-/** Literal del vault (`pantallas-nuevas.md:18`). */
+/** Literal del vault (`pantallas-nuevas.md:18`); `back` es copy de navegacion. */
 export const aboutHero: AboutHeroCopy = {
   title: 'Infraestructura abierta para el impacto colectivo',
+  back: 'Volver',
 };
 
 export interface AboutPillar {

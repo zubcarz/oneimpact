@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { FullScreenMenu, Screen } from '@/components/layout';
 import { AboutCta, AboutHero, AboutPillars } from '@/features/about';
 
@@ -10,10 +11,21 @@ import { AboutCta, AboutHero, AboutPillars } from '@/features/about';
 export default function AboutScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // `/about` se alcanza desde el menu full-screen, que puede abrirse desde
+  // cualquier pantalla: `back()` respeta de donde vino. Si no hay historial
+  // (deep link, recarga en web) cae a Inicio en vez de dejar un boton muerto.
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/');
+  };
+
   return (
     <Screen statusBar="light" bg="bg-cream">
       <FullScreenMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
-      <AboutHero onMenuPress={() => setMenuOpen(true)} />
+      <AboutHero onMenuPress={() => setMenuOpen(true)} onBack={handleBack} />
       <AboutPillars />
       <AboutCta />
     </Screen>

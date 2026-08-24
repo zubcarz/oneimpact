@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import type { AuthTokens } from '@oneimpact/shared';
 
@@ -8,25 +9,64 @@ import type { AuthTokens } from '@oneimpact/shared';
 const ACCESS_TOKEN_KEY = 'oneimpact.accessToken';
 const REFRESH_TOKEN_KEY = 'oneimpact.refreshToken';
 
+/**
+ * Where a token physically lives, per platform.
+ *
+ * `expo-secure-store` has no browser implementation: on web its native module
+ * resolves to a stub and the first call dies with
+ * "ExpoSecureStore.default.getValueWithKeyAsync is not a function", which took
+ * down the whole app at `AuthProvider` bootstrap. The target platform of the
+ * product is native (Keychain / Keystore, per rule 20), so web gets a fallback
+ * whose only job is to let the app run in a browser for a quick look.
+ *
+ * The fallback is **in memory on purpose**. `localStorage` would survive a
+ * reload, which is exactly why it is not used: a JWT in `localStorage` is
+ * readable by any script on the page, and the repo forbids that for the admin
+ * (rule 40) -- there is no reason to be laxer here. The cost is that a browser
+ * reload signs you out, and that is the correct trade-off for a preview target.
+ */
+interface TokenBackend {
+  getItemAsync(key: string): Promise<string | null>;
+  setItemAsync(key: string, value: string): Promise<void>;
+  deleteItemAsync(key: string): Promise<void>;
+}
+
+function createMemoryBackend(): TokenBackend {
+  const values = new Map<string, string>();
+  return {
+    getItemAsync: (key) => Promise.resolve(values.get(key) ?? null),
+    setItemAsync: (key, value) => {
+      values.set(key, value);
+      return Promise.resolve();
+    },
+    deleteItemAsync: (key) => {
+      values.delete(key);
+      return Promise.resolve();
+    },
+  };
+}
+
+const backend: TokenBackend = Platform.OS === 'web' ? createMemoryBackend() : SecureStore;
+
 export async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+  return backend.getItemAsync(ACCESS_TOKEN_KEY);
 }
 
 export async function getRefreshToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+  return backend.getItemAsync(REFRESH_TOKEN_KEY);
 }
 
 export async function saveTokens(tokens: AuthTokens): Promise<void> {
   await Promise.all([
-    SecureStore.setItemAsync(ACCESS_TOKEN_KEY, tokens.accessToken),
-    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, tokens.refreshToken),
+    backend.setItemAsync(ACCESS_TOKEN_KEY, tokens.accessToken),
+    backend.setItemAsync(REFRESH_TOKEN_KEY, tokens.refreshToken),
   ]);
 }
 
 export async function clearTokens(): Promise<void> {
   await Promise.all([
-    SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
-    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+    backend.deleteItemAsync(ACCESS_TOKEN_KEY),
+    backend.deleteItemAsync(REFRESH_TOKEN_KEY),
   ]);
 }
 

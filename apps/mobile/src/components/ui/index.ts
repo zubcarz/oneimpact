@@ -62,3 +62,6 @@ export type { StepperProps } from './Stepper';
 
 export { CardPreview } from './CardPreview';
 export type { CardPreviewProps } from './CardPreview';
+
+export { BackButton } from './BackButton';
+export type { BackButtonProps, BackButtonTone } from './BackButton';

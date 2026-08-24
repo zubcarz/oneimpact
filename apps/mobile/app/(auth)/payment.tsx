@@ -64,7 +64,7 @@ export default function PaymentScreen() {
 
   return (
     <Screen statusBar="dark" bg="bg-cream" contentContainerClassName="gap-6 px-5 pb-10">
-      <AuthScreenHeader onBack={handleBack} />
+      <AuthScreenHeader onBack={handleBack} title="Pago" />
       <Stepper current={2} />
       <CardForm
         planId={planId}

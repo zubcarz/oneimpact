@@ -1,35 +1,43 @@
-import { Pressable, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft } from 'lucide-react-native';
-import { colors } from '@oneimpact/ui-tokens';
+import { BackButton } from '@/components/ui';
 
 export interface AuthScreenHeaderProps {
   onBack: () => void;
+  /**
+   * Titulo corto de la pantalla, en espanol. Opcional pero recomendado: un
+   * chevron solo no dice donde esta uno ni a donde vuelve, y estas tres
+   * pantallas son pasos de un flujo (`pantallas-nuevas.md:23-56`).
+   */
+  title?: string;
   testID?: string;
 }
 
 /**
  * Header compartido por Registro, Pago simulado y Login
- * (`pantallas-nuevas.md:24,29,54`): un boton de volver sobre el fondo crema de
- * esas tres pantallas. A diferencia de `components/layout/Header` (logo +
- * menu, absoluto sobre una foto), este vive en el flujo normal del contenido,
- * arriba del `Stepper`. Sin padding horizontal propio: la pantalla que lo usa
- * ya envuelve todo su contenido en el mismo `px-5` (`pantallas-nuevas.md`
- * fija 20 de padding de pagina para estas pantallas).
+ * (`pantallas-nuevas.md:24,29,54`): `BackButton` en tono `solid` sobre el fondo
+ * crema de esas tres pantallas, con el titulo del paso al lado. A diferencia de
+ * `components/layout/Header` (logo + menu, absoluto sobre una foto), este vive
+ * en el flujo normal del contenido, arriba del `Stepper`. Sin padding
+ * horizontal propio: la pantalla que lo usa ya envuelve todo su contenido en el
+ * mismo `px-5` (`pantallas-nuevas.md` fija 20 de padding de pagina para estas
+ * pantallas).
  */
-export function AuthScreenHeader({ onBack, testID }: AuthScreenHeaderProps) {
+export function AuthScreenHeader({ onBack, title, testID }: AuthScreenHeaderProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ paddingTop: insets.top + 12 }} testID={testID}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Volver"
-        onPress={onBack}
-        className="h-11 w-11 items-center justify-center rounded-full border border-black/5 bg-white active:opacity-80"
-      >
-        <ChevronLeft size={22} color={colors.gray900} />
-      </Pressable>
+    <View
+      className="flex-row items-center gap-3"
+      style={{ paddingTop: insets.top + 12 }}
+      testID={testID}
+    >
+      <BackButton onPress={onBack} tone="solid" />
+      {title !== undefined ? (
+        <Text className="text-base font-bold text-gray-900" accessibilityRole="header">
+          {title}
+        </Text>
+      ) : null}
     </View>
   );
 }

@@ -1,10 +1,8 @@
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft } from 'lucide-react-native';
-import { colors } from '@oneimpact/ui-tokens';
+import { BackButton } from '@/components/ui';
 import { overlay } from '@/theme/overlays';
 import { projectDetail } from '@/data/projects';
 
@@ -23,8 +21,8 @@ const HERO_HEIGHT_RATIO = 0.55;
 
 /**
  * Hero del detalle de proyecto: mismo molde que `ZoneDetailHero`
- * (`src/features/zones/ZoneDetailHero.tsx:27-53`) -- imagen a sangre con
- * gradiente + boton back glass -- mas un chip de zona `bg-accent` sobre el
+ * (`src/features/zones/ZoneDetailHero.tsx`) -- imagen a sangre con
+ * gradiente + `BackButton` glass -- mas un chip de zona `bg-accent` sobre el
  * titulo. A diferencia de Zonas, el titulo aca usa `font-black` (900), como
  * en Home (`pantallas-nuevas.md`, "Detalle de proyecto").
  */
@@ -47,15 +45,7 @@ export function ProjectDetailHero({ title, image, zoneName, onBack }: ProjectDet
       </View>
 
       <View className="absolute left-0 right-0 top-0 px-5 py-4" style={{ paddingTop: insets.top }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={projectDetail.back}
-          onPress={onBack}
-          className="h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/40 bg-white/20 active:opacity-90"
-        >
-          <BlurView intensity={30} tint="light" style={ABSOLUTE_FILL} />
-          <ChevronLeft size={22} color={colors.white} />
-        </Pressable>
+        <BackButton onPress={onBack} accessibilityLabel={projectDetail.back} />
       </View>
     </View>
   );

@@ -2,8 +2,9 @@
  * Navegacion compartida por Header y FullScreenMenu (`02-Analisis-Visual/componentes.md`).
  * El footer de pagina se retiro de las pantallas por decision de producto: sus
  * enlaces, el contacto y el copyright viven ahora dentro del menu principal.
- * `href` se tipa como `string` porque algunas rutas (`/about`, `/projects`) todavia
- * no existen como pantallas; se navega con un cast tipado a `Href` en el punto de uso.
+ * `href` se tipa como `string` y se navega con un cast a `Href` en el punto de
+ * uso: hoy todas estas rutas existen, pero el tipo `Href` de expo-router se
+ * genera desde `app/` y este modulo es solo datos, sin dependencia del router.
  */
 export interface NavItem {
   /** Copia visible, en espanol. */
@@ -14,7 +15,8 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'Inicio', href: '/' },
   { label: 'Zonas One Impact', href: '/zones' },
-  // Unico destino que solo existia en el footer; entra al menu para no perderlo.
+  // Tambien es un tab (`app/(tabs)/_layout.tsx`); sigue en el menu para que el
+  // indice de secciones este completo.
   { label: 'Proyectos', href: '/projects' },
   { label: 'Cómo aportar', href: '/subscription' },
   { label: 'Quiénes somos', href: '/about' },
