@@ -31,6 +31,9 @@ const GENERIC_ERROR_MESSAGE = 'Ocurrió un error. Inténtalo de nuevo.';
  */
 export const AUTH_ERROR_COPY: Record<string, string> = {
   EMAIL_TAKEN: 'Ese email ya tiene cuenta.',
+  // Generico a proposito: el login nunca dice cual de los dos campos fallo
+  // (`pantallas-nuevas.md:55`, "Fondo crema ... CTA dark"; regla de la Fase 4).
+  INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
 };
 
 /** Mensaje de banner generico para un error de auth que no tiene copy propio. */

@@ -7,6 +7,12 @@ export type { PlanSummaryCardProps } from './PlanSummaryCard';
 export { RegisterForm } from './RegisterForm';
 export type { RegisterFormProps } from './RegisterForm';
 
+export { LoginForm } from './LoginForm';
+export type { LoginFormProps } from './LoginForm';
+
+export { WelcomeCheck } from './WelcomeCheck';
+export type { WelcomeCheckProps } from './WelcomeCheck';
+
 export { CardForm } from './CardForm';
 export type { CardFormProps } from './CardForm';
 

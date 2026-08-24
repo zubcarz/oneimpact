@@ -25,6 +25,22 @@ export const joinCta: NavItem = {
   href: '/subscription',
 };
 
+/** CTA del menu cuando ya hay sesion (`pantallas-nuevas.md`, integracion de sesion, Fase 4). */
+export const dashboardCta: NavItem = {
+  label: 'Mi dashboard',
+  href: '/(app)/dashboard',
+};
+
+/**
+ * `FullScreenMenu` es el unico componente de layout con dependencia de sesion
+ * (`20260823-mobile-register-payment-welcome.plan.md`, Fase 4). Recibe un
+ * booleano en vez de importar `AuthStatus` de `@/auth` para no acoplar este
+ * modulo de datos estaticos a la capa de auth.
+ */
+export function resolveMenuCta(isAuthed: boolean): NavItem {
+  return isAuthed ? dashboardCta : joinCta;
+}
+
 export const contactEmail = 'hola@oneimpact.org';
 
 export const copyright = '© 2026 One Impact. Todos los derechos reservados.';

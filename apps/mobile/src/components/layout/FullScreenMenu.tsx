@@ -6,14 +6,15 @@ import { router, type Href } from 'expo-router';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { ArrowRight, X } from 'lucide-react-native';
 import { colors } from '@oneimpact/ui-tokens';
+import { useAuth } from '@/auth';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { Button } from '@/components/ui';
 import {
   contactEmail,
   copyright,
-  joinCta,
   navAccessibilityLabels,
   navItems,
+  resolveMenuCta,
   type NavItem,
 } from '@/data/nav';
 
@@ -32,6 +33,8 @@ const LOGO_SIZE = { width: 82, height: 32 };
  */
 export function FullScreenMenu({ visible, onClose }: FullScreenMenuProps) {
   const insets = useSafeAreaInsets();
+  const { status } = useAuth();
+  const menuCta = resolveMenuCta(status === 'authed');
 
   const navigateTo = (item: NavItem) => {
     onClose();
@@ -81,11 +84,11 @@ export function FullScreenMenu({ visible, onClose }: FullScreenMenuProps) {
 
           <View className="mt-auto pt-8">
             <Button
-              label={joinCta.label}
+              label={menuCta.label}
               variant="dark"
               size="lg"
               fullWidth
-              onPress={() => navigateTo(joinCta)}
+              onPress={() => navigateTo(menuCta)}
             />
 
             <View className="mt-6 flex-row items-center justify-between border-t border-black/10 pt-5">
