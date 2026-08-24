@@ -10,6 +10,10 @@
 > **Zonas de riesgo**: **auth y roles** (cookie httpOnly, middleware de rol, casos negativos 401/403 obligatorios). Sin pago simulado. Sin config de Metro.
 > **Fase del roadmap**: Fase 1 el minimo (fases 0-3: login + tabla + `login.spec` en CI); Fase 2 el resto (fases 4-6).
 > **Como ejecutar**: `/run-plan-worktree admin-auth-and-projects` (rama `feat/admin-auth-and-projects`, como indica el spec). `/run-plan-guided` si se prefiere revisar fase por fase en el arbol principal.
+> **Estado de arranque**: **listo**. Sin decisiones bloqueantes: las cinco estan
+> resueltas abajo. Este item **no depende del 07** -- es la unica lane de las
+> tres que nunca estuvo bloqueada por el, y su unica dependencia real (el item
+> 06, que sirve los endpoints de escritura) esta en `main` desde `d0fab7b`.
 
 ## Objetivo
 
@@ -131,11 +135,11 @@ Para `admin` los pasos son `typecheck`, `lint`, `unit` y `e2e` (Playwright,
 "Postgres apagado -> SKIP": en cuanto `login.spec` sea login real, un
 `--scope all` sin API levantada se pone en rojo. Se corrige en la fase 3.
 
-## Decisiones pendientes (bloqueantes)
+## Decisiones resueltas
 
 ### D1 -- Como llega el cliente a la API sin exponer el token
 
-**Recomendacion: proxy minimo (la opcion por defecto del spec).** Dos clientes,
+**RESUELTA: proxy minimo (la opcion por defecto del spec).** Dos clientes,
 ambos sobre `packages/api-client`, cero cambios en el package:
 
 - **Servidor** (`src/lib/api-server.ts`): `createApiClient({ baseUrl: API_URL,
@@ -159,7 +163,7 @@ cliente".
 
 ### D2 -- Donde se refresca el access token (15 min)
 
-**Recomendacion: en el route handler del proxy, una sola vez por request.** Ante
+**RESUELTA: en el route handler del proxy, una sola vez por request.** Ante
 un 401 de la API, el proxy llama `POST /v1/auth/refresh` con `oi_refresh`,
 guarda el par nuevo en cookies (un route handler **si** puede escribir cookies) y
 reintenta una vez. Los Server Components **no** pueden escribir cookies: si su
@@ -175,7 +179,7 @@ minutos y su primera accion es una navegacion (no una query de cliente), ve el
 login otra vez aunque el refresh siga vivo. Alternativa si molesta: mover el
 refresh al middleware con `runtime: 'nodejs'`.
 
-### D3 -- shadcn/ui via CLI, o primitivos propios con los tokens (BLOQUEANTE)
+### D3 -- shadcn/ui via CLI, o primitivos propios con los tokens
 
 - **(a) `npx shadcn@latest init` + `add button input label table select badge
 textarea`.** Cumple la regla 40 al pie de la letra. Costos: agrega ~8
@@ -190,17 +194,21 @@ textarea`.** Cumple la regla 40 al pie de la letra. Costos: agrega ~8
   textarea, barra de progreso, boton): no se pierde la accesibilidad de Radix
   porque en el alcance de este item no hay dialog ni popover.
 
-**Recomendacion: (b), registrando la desviacion de la regla 40 en un ADR corto**
+**RESUELTA: (b), registrando la desviacion de la regla 40 en un ADR corto**
 (`docs/adr/`) en la fase 1. Motivo: el invariante del spec ("paleta del sistema,
 no shadcn por defecto") es la restriccion mas fuerte, y (a) termina en el mismo
-lugar despues de mas trabajo y mas superficie de riesgo.
+lugar despues de mas trabajo y mas superficie de riesgo -- ademas de exigir red
+durante la ejecucion y de reescribir `globals.css` metiendo una paleta `oklch`
+junto al bloque `@theme` actual.
 
-**Si se elige (a), la fase 1 crece** con un paso de `init` + `add` y un paso de
-re-skin, y hay que verificar que el `@theme` de One Impact siga ganando.
+El ADR es obligatorio, no opcional: es lo que impide que esta desviacion se lea
+mas adelante como un descuido. Si en algun momento se quiere (a), la fase 1 crece
+con un paso de `init` + `add` y otro de re-skin, y hay que verificar que el
+`@theme` de One Impact siga ganando.
 
 ### D4 -- Que se manda en `mediaUrl` al publicar un avance
 
-**Recomendacion: tres caminos en un solo formulario, en este orden.**
+**RESUELTA: tres caminos en un solo formulario, en este orden.**
 
 1. El admin elige archivo -> `POST /v1/uploads/sign` (via proxy).
 2. Si la respuesta trae `simulated: true` (**siempre en local y en CI**): no se
@@ -218,9 +226,9 @@ re-skin, y hay que verificar que el `@theme` de One Impact siga ganando.
 Seguimiento fuera de este plan (item 14): agregar `publicUrl` a
 `signedUploadSchema` para que el cliente no tenga que reconstruirla.
 
-### D5 -- Tests unitarios del admin sin RTL (no bloqueante)
+### D5 -- Tests unitarios del admin sin RTL
 
-**Recomendacion: en este plan, tests unitarios solo de logica pura** (decode del
+**RESUELTA: en este plan, tests unitarios solo de logica pura** (decode del
 JWT, construccion de query params de filtros, conversion `datetime-local` <->
 ISO, helper de subida con `fetch` mockeado). No se agregan `jsdom` ni
 `@testing-library/react`: los formularios quedan cubiertos por Playwright, que
@@ -289,8 +297,9 @@ una linea, y cerrar D1-D5.
    omitirlo**; si el chequeo dice otra cosa, se ajusta la fase 5.
 5. Baseline verde:
    `bash scripts/dev/quality-check.sh --scope admin --only typecheck,lint,unit`.
-6. Confirmar **D3** (shadcn CLI o primitivos propios) con el usuario. **Es
-   bloqueante para la fase 1.**
+6. **D3 ya esta resuelta** (primitivos propios + ADR): la fase 1 arranca sin
+   esperar nada. Lo unico que se comprueba aca es que `src/components/ui/` sigue
+   vacio salvo su `.gitkeep`, o sea que nadie metio shadcn por otro lado.
 
 **Verificacion** (acotada a la fase):
 

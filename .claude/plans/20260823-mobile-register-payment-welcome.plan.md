@@ -2,7 +2,7 @@
 
 > **Fecha**: 2026-08-23
 > **Origen**: Modo R -- spec del roadmap `.claude/roadmap/specs/09-mobile-register-payment-welcome.md` (item 09, ola 4).
-> **Base**: vault `02-Analisis-Visual/pantallas/pantallas-nuevas.md:23-56` (Registro, Pago simulado, Bienvenida, Login), `01-Tecnologia-Arquitectura/arquitectura-sistema.md` (Flujo clave), `01-Tecnologia-Arquitectura/plan-de-trabajo.md:22`. Planes previos: `.claude/plans/20260822-mobile-data-layer-and-auth.plan.md` (item 07, **ejecutado solo hasta la Fase 2** -- ver Contexto #1), `.claude/plans/20260822-api-payments-subscriptions-events.plan.md` (item 06, mergeado en `d0fab7b`).
+> **Base**: vault `02-Analisis-Visual/pantallas/pantallas-nuevas.md:23-56` (Registro, Pago simulado, Bienvenida, Login), `01-Tecnologia-Arquitectura/arquitectura-sistema.md` (Flujo clave), `01-Tecnologia-Arquitectura/plan-de-trabajo.md:22`. Planes previos: `.claude/plans/20260822-mobile-data-layer-and-auth.plan.md` (item 07, **completo** desde `570cdf5`), `.claude/plans/20260822-api-payments-subscriptions-events.plan.md` (item 06, mergeado en `d0fab7b`).
 > **Areas**: mobile
 > **Contrato shared tocado**: **No**. Se consumen `registerSchema`, `loginSchema` (`packages/shared/src/schemas/auth.ts:4-15`), `createSubscriptionSchema`, `simulatedCardSchema`, `isValidLuhn`, `detectCardBrand` (`packages/shared/src/schemas/payment.ts:14-58`) y `PLANS`/`monthlyPriceFor` (`packages/shared/src/plans.ts:8-23`). Ningun schema se duplica ni se modifica.
 > **Schema Prisma tocado**: No
@@ -10,6 +10,9 @@
 > **Zonas de riesgo**: **pago simulado** (invariante del PAN) y **auth** (persistencia de sesion, casos 401/403). Sin cambios en config de Metro/NativeWind.
 > **Fase del roadmap**: Fase 1 (entrega lunes 24 ago 2026, 18:00). Ola 4, en paralelo con el item 14.
 > **Como ejecutar**: `/run-plan-guided` (default; el spec lo pide explicitamente por ser flujo sensible)
+> **Estado de arranque**: **listo**, con un unico prerrequisito operativo:
+> instalar `react-hook-form` y `@hookform/resolvers` (ver Prerrequisitos). Sin
+> decisiones bloqueantes: D1 y D2 quedaron sin objeto al completarse el item 07.
 
 ## Objetivo
 
@@ -21,26 +24,33 @@ servidor ni a un log".
 
 ## Contexto y hallazgos del analisis
 
-1. **El item 07 se mergeo incompleto.** El merge `2e45527` solo trae las Fases 1
-   y 2 del plan `20260822-mobile-data-layer-and-auth.plan.md` (commits
-   `8d7c0d1` y `74521aa`). **No existen** en el arbol:
-   - Fase 3: MSW (`apps/mobile/src/api/msw/**`). Confirmado: `grep -rl msw
-apps/mobile` no devuelve nada y `msw` no esta en `pnpm-lock.yaml`.
-   - Fase 4: `AuthProvider`, `useAuth`, `useRequireAuth`, `useRequireRole`, el
-     grupo `(app)` y `app/(app)/dashboard.tsx`. `apps/mobile/src/auth/` solo
-     contiene `token-store.ts`; `app/(app)/` solo tiene un `.gitkeep`.
-   - Fase 5: Zonas consumiendo hooks.
-     El propio codigo lo declara: `apps/mobile/src/api/hooks/useAuthMutations.ts:6-9`
-     dice "Persisting the tokens ... is the AuthProvider's job (Phase 4)", y
-     `apps/mobile/src/api/hooks/useMe.ts:6-9` lo repite. La tabla de estado del
-     roadmap (`.claude/roadmap/ROADMAP.md`) marca 07 como `pendiente`, lo cual es
-     **mas fiel** que el merge. Esto es la Decision pendiente **D1**.
-2. **Sin `AuthProvider` no hay item 09.** El spec exige que el submit de
-   Registro "guarde tokens" y que el de Pago viaje con `Authorization`
-   (`POST /v1/subscriptions` no es `@Public()`). Hoy `useRegister` y `useLogin`
-   solo hacen la llamada de red y resuelven con `{ user, tokens }`
-   (`apps/mobile/src/api/hooks/useAuthMutations.ts:10-19`); nadie los persiste.
-   Ademas el CTA de Bienvenida apunta a `/(app)/dashboard`, ruta que no existe.
+1. **El item 07 esta completo y este plan ya no arrastra su deuda.** Sus cuatro
+   commits restantes entraron a `main`: `fdb8d72` (MSW), `81016a1`
+   (`AuthProvider` + grupos de ruta), `7ccdcef` (Zonas sobre hooks) y `570cdf5`
+   (AI log). Lo que este plan daba por ausente y **ya existe**:
+   - `AuthProvider` con `status: 'loading' | 'guest' | 'authed'`, `user`,
+     `signIn`, `signUp`, `signOut` (`apps/mobile/src/auth/AuthProvider.tsx:15-21`),
+     montado en `app/_layout.tsx:55` dentro de `QueryClientProvider`.
+   - `useAuth` (`src/auth/useAuth.ts`), `useRequireAuth`, `useRequireRole`, y
+     `loginHref(returnTo)` (`src/auth/routes.ts:20`), que este plan usa tal cual
+     para el `returnTo` del login.
+   - Grupo protegido `(app)` con guard (`app/(app)/_layout.tsx:16-28`) y
+     `app/(app)/dashboard.tsx` placeholder, con su `TODO(item 10)`: es el destino
+     al que navega la Bienvenida de la Fase 4.
+   - MSW cubriendo el contrato completo (`src/api/msw/handlers.ts`), incluidos
+     `POST /v1/auth/register` (`:125`), `login` (`:134`), `POST /v1/subscriptions`
+     (`:329`) y `GET /v1/dashboard/me` (`:363`).
+   Consecuencia directa: **la Fase 1 de la version anterior de este plan
+   desaparece** -- su commit sugerido era literalmente
+   `feat(mobile): auth provider with secure store and route groups`, o sea
+   `81016a1`. Las fases se renumeraron 2..6 -> 1..5.
+2. **La persistencia de sesion ya esta resuelta.** `signUp`/`signIn` del provider
+   llaman `callApi` y guardan los tokens en secure-store, asi que el submit de
+   Registro cumple el spec sin trabajo extra, y `POST /v1/subscriptions` (que no
+   es `@Public()`) viaja autenticado. `useRegister`/`useLogin`
+   (`src/api/hooks/useAuthMutations.ts`) siguen existiendo como mutaciones
+   independientes; **este plan usa el provider, no esos hooks**, que es lo que
+   hace el AuthProvider segun su propio comentario.
 3. **El contrato de la API ya esta servido y es estable** (item 06 en `main`):
    - Registro duplicado -> `409` con `code: 'EMAIL_TAKEN'` y mensaje
      "Ese email ya esta registrado" (`apps/api/src/modules/auth/application/auth.service.ts:55`).
@@ -49,7 +59,7 @@ apps/mobile` no devuelve nada y `msw` no esta en `pnpm-lock.yaml`.
      (`apps/api/src/modules/subscriptions/application/subscriptions.service.ts:151-158`).
    - Suscripcion ya activa -> `409` `SUBSCRIPTION_EXISTS`
      (`.../subscriptions.service.ts:48-51`). **El spec no contempla este caso**;
-     ver Riesgos de la Fase 4.
+     ver Riesgos de la Fase 3.
    - El body de error es `{ statusCode, code, message, details? }`
      (`apps/api/src/common/filters/domain-error.filter.ts:20-25`) y llega al
      cliente dentro de `ApiError.body` (`packages/api-client/src/http.ts:31-34`).
@@ -98,52 +108,57 @@ apps/mobile` no devuelve nada y `msw` no esta en `pnpm-lock.yaml`.
     `scopes: mobile api admin shared all | steps: typecheck lint unit e2e bundle`,
     y acepta `--filter <path>` que se pasa a jest (`scripts/dev/quality-check.sh:4,42`).
 
-## Decisiones pendientes (bloqueantes)
+## Decisiones resueltas y prerrequisitos
 
-**D1 -- Que se hace con la deuda del item 07 (BLOQUEA la Fase 1).**
-El item 09 no puede cumplir su spec sin `AuthProvider` + grupo `(app)` +
-`dashboard` placeholder (Contexto #1 y #2).
+### D1 -- Deuda del item 07
 
-- **Opcion A (recomendada)**: este plan **absorbe** la Fase 4 del plan de 07
-  como su Fase 1, y **amplia el write-scope** del spec 09 con
-  `apps/mobile/src/auth/**`, `apps/mobile/app/(app)/**` y
-  `apps/mobile/app/_layout.tsx`. Se registra en el ROADMAP que 07 quedo con las
-  Fases 3 y 5 pendientes.
-- Opcion B: reabrir 07 en su propia rama antes de empezar 09. Mas limpio en
-  trazabilidad, pero serializa dos items a menos de 30 h de la entrega.
-  El plan de abajo esta escrito asumiendo **A**. Si se elige B, la Fase 1 se borra
-  de este plan y las demas no cambian.
+**Sin objeto.** El item 07 quedo completo (`570cdf5`). La Fase 1 que absorbia su
+Fase 4 se borro de este plan y el write-scope vuelve a ser el que declara el spec
+09: no hace falta ampliarlo con `src/auth/**` ni `app/(app)/**`.
 
-**D2 -- MSW: se hace, se difiere o se descarta (BLOQUEA el criterio de aceptacion).**
-El spec 09 pide "flujo completo contra MSW y contra API". MSW es la Fase 3 no
-ejecutada de 07 y `msw` no esta en el lockfile (Contexto #1).
+### D2 -- MSW
 
-- **Opcion A (recomendada)**: **diferir**. El motivo original de MSW era
-  "mobile avanza mientras la API no existe"; el item 06 ya esta en `main`, asi
-  que el flujo se verifica contra la API real con `pnpm db:up` + `pnpm dev:api`.
-  MSW pasa a ser un seguro de demo del item 15. Consecuencia: el criterio de
-  aceptacion queda como "flujo completo contra la API real"; se anota la
-  diferencia en el ROADMAP.
-- Opcion B: meter MSW como fase previa. El propio plan de 07 la marca como "la
-  fase con mas superficie de fallo" (polyfills de `msw/native` sobre Hermes,
-  riesgo de tocar `metro.config.js`). A esta altura del calendario, es el
-  candidato numero uno a comerse la tarde.
-  El plan de abajo esta escrito asumiendo **A**.
+**Sin objeto.** MSW existe (`fdb8d72`) y cubre el contrato completo, incluidos
+`POST /v1/subscriptions` (`src/api/msw/handlers.ts:329`) y `GET /v1/dashboard/me`
+(`:363`). El criterio de aceptacion del spec ("flujo completo contra MSW y contra
+API") **se cumple literalmente**, sin reformular: se verifica con
+`EXPO_PUBLIC_USE_MSW=1` y contra la API real.
 
-**D3 -- Instalacion de dependencias (BLOQUEA la Fase 2).**
-`react-hook-form@^7.66.0` y `@hookform/resolvers@^5.2.2` en
-`apps/mobile/package.json`. Siguiendo la convencion del plan de 07, **las
-instala el usuario** antes de arrancar la fase; el implementer no corre
-`pnpm add`. Confirmar que se usan esas versiones (las de `apps/admin`) y no
-otras.
+Detalle util para la Fase 3: el simulador de MSW replica las reglas del servidor
+(`last4 === '0000'` -> rechazo, expiracion pasada -> rechazo), asi que los dos
+casos negativos del pago se pueden probar sin levantar Postgres.
 
-**D4 -- Logo de brand en `CardPreview` (no bloqueante, decidido).**
-No hay assets de marca en el vault (Contexto #9) y no se van a inventar logos de
-terceros. Se resuelve con el **nombre de la marca como texto**
-(`VISA` / `MASTERCARD` / `AMEX`, `font-black text-xs tracking-widest text-white/70`),
-que sigue satisfaciendo "reacciona al tipeo" y no agrega ningun asset ni
-dependencia. Si el usuario prefiere iconos, es un cambio de una linea en la
-Fase 2.
+### D3 -- PREREQUISITO: instalar las dependencias de formulario
+
+**No es una decision, es una accion pendiente del usuario** (convencion heredada
+del item 07: el implementer no corre `pnpm add`). Antes de la **Fase 1**:
+
+```
+pnpm --filter @oneimpact/mobile add react-hook-form@^7.66.0 @hookform/resolvers@^5.2.2
+```
+
+Las mismas versiones que `apps/admin/package.json:22-23`, para no abrir una
+segunda rama de resolucion. `zod` es `^4.4.3` en todo el monorepo, compatible con
+`@hookform/resolvers` v5. **Correr el install con Metro apagado** (seccion 7.4 de
+`docs/local-run-status.md`).
+
+### D4 -- Logo de brand en `CardPreview`
+
+**RESUELTA: el nombre de la marca como texto** (`VISA` / `MASTERCARD` / `AMEX`,
+`font-black text-xs tracking-widest text-white/70`). No hay assets de marca en el
+vault (Contexto #9) y no se inventan logos de terceros. Satisface "reacciona al
+tipeo" sin agregar assets ni dependencias. Si se prefieren iconos, es un cambio
+de una linea en la Fase 1.
+
+### D5 -- `useAuth` lanza fuera del provider (nuevo, resuelto)
+
+El item 07 dejo `useAuth` **lanzando** si no hay provider montado
+(`src/auth/useAuth.ts:10-14`), a proposito: leer la sesion sin provider es un bug
+de cableado, no un estado por defecto. Consecuencia para la Fase 4 de este plan,
+que mete `useAuth` dentro de `FullScreenMenu` (montado en las tres pantallas
+publicas): **`__tests__/FullScreenMenu.test.tsx` hay que envolverlo en
+`<AuthProvider>`**, nunca relajar sus asserts ni agregar un fallback silencioso
+al hook.
 
 ## Principios
 
@@ -163,22 +178,26 @@ Fase 2.
 
 ## Mapa de fases
 
-| Fase | Nombre                                                                    | Area   | Impacto | Shared | Prisma | Commit sugerido                                                  |
-| ---- | ------------------------------------------------------------------------- | ------ | ------- | ------ | ------ | ---------------------------------------------------------------- |
-| 0    | Pre-flight (solo lectura)                                                 | --     | Ninguno | No     | No     | _(sin commit)_                                                   |
-| 1    | Sesion: AuthProvider, grupo `(app)` y dashboard placeholder (deuda de 07) | mobile | Aditivo | No     | No     | `feat(mobile): auth provider with secure store and route groups` |
-| 2    | Primitivas de formulario: `Input`, `Stepper`, `CardPreview`               | mobile | Aditivo | No     | No     | `feat(mobile): form primitives for the auth flow`                |
-| 3    | Registro (`(auth)/register`) + integracion del CTA de Suscripcion         | mobile | Aditivo | No     | No     | `feat(mobile): register screen`                                  |
-| 4    | Pago simulado (`(auth)/payment`)                                          | mobile | Aditivo | No     | No     | `feat(mobile): simulated card payment screen`                    |
-| 5    | Bienvenida, Login e integracion de sesion en el menu                      | mobile | Aditivo | No     | No     | `feat(mobile): welcome and login screens`                        |
-| 6    | Cierre: bateria completa + AI log                                         | --     | Ninguno | No     | No     | `docs: log ai session mobile-register-payment-welcome`           |
+| Fase | Nombre                                                            | Area   | Impacto | Shared | Prisma | Commit sugerido                                        |
+| ---- | ----------------------------------------------------------------- | ------ | ------- | ------ | ------ | ------------------------------------------------------ |
+| 0    | Pre-flight (solo lectura)                                         | --     | Ninguno | No     | No     | _(sin commit)_                                         |
+| 1    | Primitivas de formulario: `Input`, `Stepper`, `CardPreview`       | mobile | Aditivo | No     | No     | `feat(mobile): form primitives for the auth flow`      |
+| 2    | Registro (`(auth)/register`) + integracion del CTA de Suscripcion | mobile | Aditivo | No     | No     | `feat(mobile): register screen`                        |
+| 3    | Pago simulado (`(auth)/payment`)                                  | mobile | Aditivo | No     | No     | `feat(mobile): simulated card payment screen`          |
+| 4    | Bienvenida, Login e integracion de sesion en el menu              | mobile | Aditivo | No     | No     | `feat(mobile): welcome and login screens`              |
+| 5    | Cierre: bateria completa + AI log                                 | --     | Ninguno | No     | No     | `docs: log ai session mobile-register-payment-welcome` |
+
+> La fase "Sesion: AuthProvider, grupo `(app)` y dashboard placeholder" que
+> figuraba aca la entrego el item 07 en `81016a1`. Se elimino de este plan y las
+> demas se renumeraron.
 
 ---
 
 ## Fase 0 -- Pre-flight (solo lectura)
 
 **Objetivo**: confirmar que el arbol de partida es el que este plan asume y que
-D1/D2/D3 estan resueltas antes de escribir una linea.
+el prerrequisito D3 (dependencias de formulario) esta cumplido antes de escribir
+una linea.
 
 **Area**: --
 **Archivos**: ninguno (solo lectura)
@@ -189,18 +208,24 @@ D1/D2/D3 estan resueltas antes de escribir una linea.
 
 **Acciones**:
 
-1. Confirmar `git status` limpio y rama base `main` en `935e109`.
-2. Confirmar el hallazgo del Contexto #1: `ls apps/mobile/src/auth/` devuelve
-   solo `token-store.ts`; `ls "apps/mobile/app/(app)"` devuelve solo
-   `.gitkeep`; `grep -rl msw apps/mobile` no devuelve nada.
-3. Confirmar D3: `react-hook-form` y `@hookform/resolvers` presentes en
-   `apps/mobile/package.json` **antes** de la Fase 2. Si no lo estan, parar y
-   pedirlas.
+1. Confirmar `git status` limpio y rama base `main` incluyendo `570cdf5` (cierre
+   del item 07).
+2. Confirmar que la base que este plan asume **si** esta:
+   `ls apps/mobile/src/auth/` devuelve `AuthProvider.tsx`, `useAuth.ts`,
+   `useRequireAuth.ts`, `useRequireRole.ts`, `routes.ts`, `token-store.ts`,
+   `index.ts`; `ls "apps/mobile/app/(app)"` devuelve `_layout.tsx` y
+   `dashboard.tsx`; `ls apps/mobile/src/api/msw/` devuelve los 5 modulos.
+3. Confirmar el prerrequisito D3: `react-hook-form` y `@hookform/resolvers`
+   presentes en `apps/mobile/package.json` **antes** de la Fase 1. Si no lo
+   estan, parar y pedirlas.
 4. Levantar la API real para las verificaciones manuales del flujo:
    `pnpm db:up`, migrar, seed, `pnpm dev:api`. Confirmar
    `GET http://localhost:5000/health` y `POST /v1/auth/login` con
    `ana@oneimpact.org` / `User123!`.
-5. Correr la linea base para no atribuirle a este plan un fallo heredado:
+5. Confirmar la otra fuente: con `EXPO_PUBLIC_USE_MSW=1`, MSW arranca sin el
+   `console.warn('[msw] failed to start the mock server')` de
+   `app/_layout.tsx:42`. Este plan verifica el flujo contra las dos.
+6. Correr la linea base para no atribuirle a este plan un fallo heredado:
    `bash scripts/dev/quality-check.sh --scope mobile --only typecheck,lint,unit`.
 
 **Verificacion** (acotada a la fase):
@@ -216,90 +241,7 @@ CHECKPOINT -- Detente aca. No inicies la Fase 1 sin aprobacion.
 
 ---
 
-## Fase 1 -- Sesion: AuthProvider, grupo `(app)` y dashboard placeholder
-
-**Objetivo**: entregar el mecanismo de sesion que el item 07 dejo sin ejecutar,
-sin ninguna pantalla de auth todavia. Al cerrar la fase existe `signUp`,
-`signIn`, `signOut`, un grupo `(app)` protegido y un `dashboard` placeholder al
-que las fases siguientes puedan navegar.
-
-**Area**: mobile
-**Archivos**:
-
-- `apps/mobile/src/auth/AuthProvider.tsx` -- context con
-  `user: UserProfile | null`, `status: 'loading' | 'guest' | 'authed'`,
-  `signIn`, `signUp`, `signOut`.
-- `apps/mobile/src/auth/useAuth.ts`
-- `apps/mobile/src/auth/useRequireAuth.ts`
-- `apps/mobile/src/auth/useRequireRole.ts`
-- `apps/mobile/src/auth/index.ts`
-- `apps/mobile/app/_layout.tsx:31-36` -- montar `AuthProvider` **dentro** de
-  `QueryClientProvider` (el provider usa `queryClient.clear()` en `signOut`) y
-  declarar `Stack.Screen name="(app)"` y `name="(auth)"`.
-- `apps/mobile/app/(app)/_layout.tsx` -- guard del grupo protegido.
-- `apps/mobile/app/(app)/dashboard.tsx` -- placeholder minimo, marcado en un
-  comentario para que el item 10 lo reemplace entero.
-
-**Spec**: vault `01-Tecnologia-Arquitectura/arquitectura-mobile.md`, seccion
-"Sesion y roles" y grupo `(app)`. Reutiliza integralmente el diseno de la Fase 4
-de `.claude/plans/20260822-mobile-data-layer-and-auth.plan.md:474-543`.
-**Shared**: No -- consume `UserProfile` y `Role` (`packages/shared/src/enums.ts`).
-**Prisma**: No
-**Eventos**: No
-
-**Acciones**:
-
-1. `AuthProvider` con la maquina de tres estados. Al montar: si hay token en
-   secure-store (`getAccessToken`, `apps/mobile/src/auth/token-store.ts:11-13`)
-   -> `GET /me` via `callApi`; si responde, `authed` con el `role`
-   **del servidor**; si falla, `clearTokens()` y `guest`. El `role` no se
-   persiste nunca como fuente de verdad.
-2. `signUp(input)` y `signIn(input)` envuelven `useRegister`/`useLogin`
-   (`apps/mobile/src/api/hooks/useAuthMutations.ts:10-19`), guardan tokens con
-   `saveTokens` **antes** de setear el usuario, y devuelven el `UserProfile`.
-   `signOut` llama `auth.logout({ refreshToken })`, limpia secure-store y hace
-   `queryClient.clear()`.
-3. Suscribir el provider a `onSessionExpired`
-   (`apps/mobile/src/auth/token-store.ts:42-47`), el listener que la Fase 2 de
-   07 dejo preparado: refresh fallido -> `guest`.
-4. Hooks `useAuth`, `useRequireAuth(returnTo)`, `useRequireRole('ADMIN')`.
-5. `app/(app)/_layout.tsx` con el guard y `dashboard.tsx` placeholder. Las
-   rutas publicas siguen accesibles con sesion: **el guard no expulsa de
-   `(tabs)`**. Una sola capa decide el destino inicial; la otra solo bloquea.
-6. Tests (`apps/mobile/__tests__/auth-provider.test.tsx`) con
-   `expo-secure-store` mockeado: `signIn` guarda el token; `signOut` lo borra;
-   arranque con token valido -> `authed` con el rol de `GET /me`; arranque con
-   token invalido -> `guest` y secure-store vacio.
-
-**Verificacion** (acotada a la fase):
-
-- `bash scripts/dev/quality-check.sh --scope mobile --only typecheck,lint,unit --filter auth`
-- Casos negativos obligatorios (zona de riesgo auth):
-  - `GET /me` -> 401 al arrancar deja `guest` **y** secure-store vacio.
-  - `useRequireRole('ADMIN')` con un usuario `USER` **no** da acceso.
-  - El `role` no se lee de estado local escribible ni de secure-store.
-- Pendiente manual (Expo Go): matar y reabrir la app mantiene la sesion;
-  `signOut` devuelve a `(tabs)` sin pantalla en blanco.
-
-**Riesgos**:
-
-- Pantalla en blanco si `status === 'loading'` no termina nunca (secure-store
-  que no resuelve en un simulador limpio). Mitigacion: el `_layout` ya tiene la
-  disciplina de "no renderizar hasta que las fuentes carguen"
-  (`apps/mobile/app/_layout.tsx:24-26`); se reusa el mismo patron con un solo
-  punto de decision.
-- Bucle de navegacion si el guard de `(app)` y la redireccion inicial de
-  `_layout` compiten. Mitigacion explicita en la accion 5.
-- `typedRoutes` (`apps/mobile/app.json`, `experiments.typedRoutes: true`) puede
-  no conocer `/dashboard` hasta que Metro regenere tipos; el `typecheck` puede
-  fallar hasta un `pnpm dev:mobile` que regenere `.expo/types`.
-
-CHECKPOINT -- Detente aca. No inicies la Fase 2 sin aprobacion.
-**Commit sugerido**: `feat(mobile): auth provider with secure store and route groups`
-
----
-
-## Fase 2 -- Primitivas de formulario: `Input`, `Stepper`, `CardPreview`
+## Fase 1 -- Primitivas de formulario: `Input`, `Stepper`, `CardPreview`
 
 **Objetivo**: los tres componentes nuevos del sistema de diseno que consumen
 las Fases 3 a 5, con sus tests, antes de que exista una pantalla que los use.
@@ -345,7 +287,7 @@ reimplementa la deteccion.**
 3. `CardPreview` con props `{ pan: string; holder: string; expMonth: string;
 expYear: string; pulsing?: boolean }`. **Enmascara dentro del componente**:
    solo se pintan los ultimos 4 digitos, el resto son bullets. `pulsing`
-   alimenta la animacion de loading de la Fase 4 (Reanimated, ya en
+   alimenta la animacion de loading de la Fase 3 (Reanimated, ya en
    `apps/mobile/package.json`). Marca como texto (**D4**).
 4. Tests: `Stepper` marca el paso correcto y no el otro; `CardPreview` con
    `4242424242424242` muestra `VISA` y **no** muestra los 12 primeros digitos
@@ -367,12 +309,12 @@ expYear: string; pulsing?: boolean }`. **Enmascara dentro del componente**:
   `FullScreenMenu.tsx:49-52`. Se aplica el mismo patron (estilo en un `View`
   normal envuelto por el `Animated.View`).
 
-CHECKPOINT -- Detente aca. No inicies la Fase 3 sin aprobacion.
+CHECKPOINT -- Detente aca. No inicies la Fase 2 sin aprobacion.
 **Commit sugerido**: `feat(mobile): form primitives for the auth flow`
 
 ---
 
-## Fase 3 -- Registro y conexion del CTA de Suscripcion
+## Fase 2 -- Registro y conexion del CTA de Suscripcion
 
 **Objetivo**: `(auth)/register?plan=&billing=` funcionando de punta a punta:
 resumen de plan, validacion con el schema de shared, alta real contra la API,
@@ -416,7 +358,7 @@ via `zodResolver`; `PLANS` y `monthlyPriceFor`
 3. `RegisterForm` con `useForm` + `zodResolver(registerSchema)`. Los mensajes de
    error son **los del schema** (`packages/shared/src/schemas/auth.ts:5-7`,
    ya en espanol); no se duplican.
-4. Submit -> `signUp` del `AuthProvider` (Fase 1) -> `router.push('/(auth)/payment?plan=&billing=')`.
+4. Submit -> `signUp` del `AuthProvider` (item 07, `src/auth/AuthProvider.tsx:18`) -> `router.push('/(auth)/payment?plan=&billing=')`.
    `409 EMAIL_TAKEN` -> error inline bajo el campo email: "Ese email ya tiene
    cuenta". Cualquier otro error -> banner generico. La ramificacion es por
    `code`, nunca por el `message`.
@@ -447,14 +389,15 @@ via `zodResolver`; `PLANS` y `monthlyPriceFor`
   no lo cubre; para la entrega, un login posterior lleva al dashboard vacio.
   Se anota como PREGUNTA ABIERTA, no se inventa un flujo de recuperacion.
 - `typedRoutes` puede no conocer `/(auth)/payment` hasta que Metro regenere
-  tipos; mismo riesgo que la Fase 1.
+  tipos: hace falta un `pnpm dev:mobile` que regenere `.expo/types` antes de
+  fiarse del `typecheck`.
 
-CHECKPOINT -- Detente aca. No inicies la Fase 4 sin aprobacion.
+CHECKPOINT -- Detente aca. No inicies la Fase 3 sin aprobacion.
 **Commit sugerido**: `feat(mobile): register screen`
 
 ---
 
-## Fase 4 -- Pago simulado
+## Fase 3 -- Pago simulado
 
 **Objetivo**: la pantalla donde se demuestra el invariante del PAN. Form de
 tarjeta con mascara, Luhn y deteccion de marca en vivo; al servidor solo
@@ -548,12 +491,12 @@ holder, expMonth, expYear } }`. Nunca un spread del estado del form -- un
   depuracion olvidado o un mensaje de error que incluya el estado del form. El
   gate de la fase incluye leer el diff buscando exactamente eso.
 
-CHECKPOINT -- Detente aca. No inicies la Fase 5 sin aprobacion.
+CHECKPOINT -- Detente aca. No inicies la Fase 4 sin aprobacion.
 **Commit sugerido**: `feat(mobile): simulated card payment screen`
 
 ---
 
-## Fase 5 -- Bienvenida, Login e integracion de sesion
+## Fase 4 -- Bienvenida, Login e integracion de sesion
 
 **Objetivo**: cerrar el flujo (Bienvenida -> Dashboard), entregar Login con
 `returnTo`, y que el menu refleje que hay sesion.
@@ -586,7 +529,10 @@ lleva a Suscripcion, credenciales seed visibles solo en dev).
    `FullScreenMenu`), `WelcomeCheck` con spring de Reanimated, copy exacto del
    spec, CTA `variant="dark"` -> `router.replace('/(app)/dashboard')`.
    **`replace`, no `push`**: el back no debe volver al pago.
-2. `login.tsx` + `LoginForm` con `zodResolver(loginSchema)`. Submit -> `signIn`
+2. `login.tsx` + `LoginForm` con `zodResolver(loginSchema)`. Lee `returnTo` con
+   `useLocalSearchParams`: es el parametro que ya emite `loginHref(returnTo)`
+   (`src/auth/routes.ts:20`), usado por `useRequireAuth` cuando el guard de
+   `(app)` expulsa a un invitado (`app/(app)/_layout.tsx:18`). Submit -> `signIn`
    del provider -> `router.replace(returnTo ?? '/(app)/dashboard')`. `401` ->
    error generico "Email o contrasena incorrectos" **sin decir cual de los dos
    falla**.
@@ -599,10 +545,15 @@ lleva a Suscripcion, credenciales seed visibles solo en dev).
    "Mi dashboard" -> `/(app)/dashboard`; si no, sigue siendo "Unete a One
    Impact" -> `/subscription`. `FullScreenMenu` pasa a leer `useAuth`; es el
    unico componente de layout que gana una dependencia de sesion.
-6. Test `login-form.test.tsx`: email invalido bloquea el submit; un 401 muestra
+6. Quitar el `as Href` de `src/auth/routes.ts:21`. Ese cast existe solo porque
+   la pantalla no existia: su propio comentario (`:9-15`) dice que "empieza a
+   verificarse de verdad en el momento en que esa pantalla aterrice". Esta fase
+   es ese momento. Requiere que Metro haya regenerado `.expo/types/router.d.ts`.
+7. Test `login-form.test.tsx`: email invalido bloquea el submit; un 401 muestra
    el mensaje generico y **no** navega. Ampliar
-   `apps/mobile/__tests__/FullScreenMenu.test.tsx` con el caso `authed` sin
-   romper los asserts existentes.
+   `apps/mobile/__tests__/FullScreenMenu.test.tsx` con el caso `authed`
+   envolviendo el render en `<AuthProvider>` (D5) y **sin** romper los asserts
+   existentes.
 
 **Verificacion** (acotada a la fase):
 
@@ -622,17 +573,19 @@ lleva a Suscripcion, credenciales seed visibles solo en dev).
 
 - `FullScreenMenu` esta montado en las tres pantallas publicas; si `useAuth`
   lanza por estar fuera del provider, se caen Inicio, Zonas y Suscripcion a la
-  vez. Mitigacion: el provider se monta en `app/_layout.tsx` (Fase 1), por
-  encima de todo, y el hook devuelve un default seguro si el context falta.
+  vez. Mitigacion: el provider ya se monta en `app/_layout.tsx:55` (item 07),
+  por encima de todo. **Ojo**: `useAuth` **lanza** fuera del provider a
+  proposito (`src/auth/useAuth.ts:10-14`); no hay default silencioso, asi que la
+  unica proteccion real es que el provider este montado, no un fallback.
 - El test existente `FullScreenMenu.test.tsx` va a necesitar el provider en su
   render. Envolverlo, **no** relajar sus asserts.
 
-CHECKPOINT -- Detente aca. No inicies la Fase 6 sin aprobacion.
+CHECKPOINT -- Detente aca. No inicies la Fase 5 sin aprobacion.
 **Commit sugerido**: `feat(mobile): welcome and login screens`
 
 ---
 
-## Fase 6 -- Cierre: bateria completa y AI log
+## Fase 5 -- Cierre: bateria completa y AI log
 
 **Objetivo**: dejar el arbol verde en todos los workspaces, verificar el flujo
 completo a mano contra la API real, y registrar la sesion como entregable.
@@ -641,9 +594,9 @@ completo a mano contra la API real, y registrar la sesion como entregable.
 **Archivos**:
 
 - `docs/ai-workflow.md` -- via `/ai-log`.
-- `.claude/roadmap/ROADMAP.md` -- tabla de Estado: item 09 hecho; **y la nota de
-  que el item 07 quedo con sus Fases 3 (MSW) y 5 (Zonas con hooks) pendientes**
-  (Contexto #1, decisiones D1 y D2).
+- `.claude/roadmap/ROADMAP.md` -- tabla de Estado: item 09 hecho con su rango de
+  commits. La nota del item 07 ya esta puesta y correcta: no hay nada que
+  corregir ahi.
 - `.claude/plans/README.md` -- indice y estado del plan.
 
 **Spec**: --
@@ -656,7 +609,7 @@ completo a mano contra la API real, y registrar la sesion como entregable.
 1. `bash scripts/dev/quality-check.sh --scope all`.
 2. `bash scripts/dev/quality-check.sh --scope mobile --only bundle` (`expo
 export --platform android`): la unica prueba de que las dependencias nuevas
-   de la Fase 2 bundlean bajo Hermes.
+   de la Fase 1 bundlean bajo Hermes.
 3. Recorrido manual completo contra la API real, anotando cada paso:
    Suscripcion -> Registro -> Pago (`4242...`) -> Bienvenida -> Dashboard;
    y la variante `...0000` -> banner de rechazo sin navegacion.
