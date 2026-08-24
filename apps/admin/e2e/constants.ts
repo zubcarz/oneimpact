@@ -35,6 +35,20 @@ export const USER_ACCOUNT: E2eAccount = {
 export const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5001';
 
 /**
+ * Origin of the API, for the assertions a spec makes **outside** the panel.
+ *
+ * `projects.spec.ts` closes its flow against `GET /v1/projects/:id`, which is
+ * `@Public()` (apps/api/src/modules/projects/controllers/projects.controller.ts:26-27):
+ * reading the stored progress from the source instead of from the screen that
+ * just wrote it is what turns "the bar says 40" into "the project is at 40".
+ *
+ * Same precedence as the panel itself (`src/lib/env.ts:13`), so pointing the
+ * suite at another deployment needs one variable and no patch here.
+ */
+export const API_URL =
+  process.env.API_URL?.trim() || process.env.NEXT_PUBLIC_API_URL?.trim() || 'http://localhost:5000';
+
+/**
  * Where `global-setup.ts` leaves the admin session for the `chromium-admin`
  * project.
  *
