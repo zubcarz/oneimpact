@@ -121,24 +121,24 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 
 ## Estado
 
-| #   | Item                              | Estado    | Rama / commits                                                 |
-| --- | --------------------------------- | --------- | -------------------------------------------------------------- |
-| 00  | mobile-foundation-and-home        | hecho     | `03bf7dd..48c6788` en main                                     |
-| 01  | shared-contract-and-seed          | hecho     | `9dd3061..104e58c` en main                                     |
-| 02  | api-catalog-and-projects          | hecho     | `378cd25..0d8ac58`, mergeado a main en `fc142c9`               |
-| 03  | mobile-zones-screens              | hecho     | `f458a55..ec6f416`, mergeado a main en `d01d14b`               |
-| 04  | mobile-subscription-screen        | hecho     | `bdc84ae..11443dc`, mergeado a main en `4817435`               |
-| 05  | api-auth-and-roles                | hecho     | `d408426..80e57ad`, mergeado a main en `07f5d04`               |
-| 06  | api-payments-subscriptions-events | hecho     | `6a24006..0573655`, mergeado a main en `d0fab7b`               |
-| 07  | mobile-data-layer-and-auth        | hecho     | `8d7c0d1..570cdf5` (merge parcial `2e45527` + cierre en main)  |
-| 08  | mobile-projects-and-about         | hecho     | `c3aa9bf..4367a10`, mergeado a main en `1c704cc`               |
-| 09  | mobile-register-payment-welcome   | hecho     | `9ad0ea4..f2238b6`, mergeado a main en `5dcd596`               |
-| 10  | mobile-dashboard-and-profile      | pendiente |                                                                |
-| 11  | admin-auth-and-projects           | hecho     | `6d83c96..f15003f`, mergeado a main en `45e5b65`               |
-| 12  | api-dashboard-metrics-and-outbox  | pendiente |                                                                |
-| 13  | admin-metrics-users-subscriptions | pendiente |                                                                |
-| 14  | deploy-and-ci                     | pendiente |                                                                |
-| 15  | release-readme-gif                | pendiente |                                                                |
+| #   | Item                              | Estado    | Rama / commits                                                                            |
+| --- | --------------------------------- | --------- | ----------------------------------------------------------------------------------------- |
+| 00  | mobile-foundation-and-home        | hecho     | `03bf7dd..48c6788` en main                                                                |
+| 01  | shared-contract-and-seed          | hecho     | `9dd3061..104e58c` en main                                                                |
+| 02  | api-catalog-and-projects          | hecho     | `378cd25..0d8ac58`, mergeado a main en `fc142c9`                                          |
+| 03  | mobile-zones-screens              | hecho     | `f458a55..ec6f416`, mergeado a main en `d01d14b`                                          |
+| 04  | mobile-subscription-screen        | hecho     | `bdc84ae..11443dc`, mergeado a main en `4817435`                                          |
+| 05  | api-auth-and-roles                | hecho     | `d408426..80e57ad`, mergeado a main en `07f5d04`                                          |
+| 06  | api-payments-subscriptions-events | hecho     | `6a24006..0573655`, mergeado a main en `d0fab7b`                                          |
+| 07  | mobile-data-layer-and-auth        | hecho     | `8d7c0d1..570cdf5` (merge parcial `2e45527` + cierre en main)                             |
+| 08  | mobile-projects-and-about         | hecho     | `c3aa9bf..4367a10`, mergeado a main en `1c704cc`                                          |
+| 09  | mobile-register-payment-welcome   | hecho     | `9ad0ea4..f2238b6`, mergeado a main en `5dcd596`                                          |
+| 10  | mobile-dashboard-and-profile      | hecho     | `f1118cc..7b8d947`, mergeado a main en `876ce6f`                                          |
+| 11  | admin-auth-and-projects           | hecho     | `6d83c96..f15003f`, mergeado a main en `45e5b65`                                          |
+| 12  | api-dashboard-metrics-and-outbox  | hecho     | `c2ff28f..e50e7a0`, mergeado a main en `3f6853a`                                          |
+| 13  | admin-metrics-users-subscriptions | pendiente | plan en `.claude/plans/20260824-admin-metrics-users-subscriptions.plan.md` (sin ejecutar) |
+| 14  | deploy-and-ci                     | pendiente |                                                                                           |
+| 15  | release-readme-gif                | pendiente |                                                                                           |
 
 **Sobre el 07**: se entrego en dos tandas. El merge `2e45527` trajo solo las
 fases 1 (alinear `api-client`) y 2 (cliente, query keys, token-store y hooks);
