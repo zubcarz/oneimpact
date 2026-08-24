@@ -1,8 +1,13 @@
 export { ZonesHero } from './ZonesHero';
 export { ZonesList } from './ZonesList';
+export type { ZonesListProps } from './ZonesList';
 export { AdvancesCarousel } from './AdvancesCarousel';
+export type { AdvancesCarouselProps } from './AdvancesCarousel';
 export { ZoneDetailHero } from './ZoneDetailHero';
 export type { ZoneDetailHeroProps } from './ZoneDetailHero';
 export { ZoneAdvances } from './ZoneAdvances';
 export type { ZoneAdvancesProps } from './ZoneAdvances';
 export { ZoneEmptyAdvances } from './ZoneEmptyAdvances';
+export { ZonesSkeleton } from './ZonesSkeleton';
+export { ZonesError } from './ZonesError';
+export type { ZonesErrorProps } from './ZonesError';

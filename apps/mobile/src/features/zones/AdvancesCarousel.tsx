@@ -1,15 +1,22 @@
 import { useCallback, useState } from 'react';
 import { FlatList, View, type ViewToken } from 'react-native';
 import { AdvanceCard, Dots, SectionHeader } from '@/components/ui';
-import { advances, zonesScreen, type AdvanceView } from '@/data/zones';
+import { zonesScreen, type AdvanceView } from '@/data/zones';
 
 const CARD_WIDTH = 220;
 const CARD_GAP = 16;
 /** Identidad estable a nivel de modulo: FlatList exige que no cambie entre renders. */
 const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 60 };
 
-/** Seccion 3 de Zonas: carrusel "Avances desde el territorio" (`pantallas/zonas.md` #3). */
-export function AdvancesCarousel() {
+export interface AdvancesCarouselProps {
+  advances: AdvanceView[];
+}
+
+/**
+ * Seccion 3 de Zonas: carrusel "Avances desde el territorio" (`pantallas/zonas.md` #3).
+ * Presentacional: recibe `advances` por props (derivadas de `useProjects()`).
+ */
+export function AdvancesCarousel({ advances }: AdvancesCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const handleViewableItemsChanged = useCallback(

@@ -1,11 +1,14 @@
 /**
- * Copy y datos derivados de la pantalla Zonas (`02-Analisis-Visual/pantallas/zonas.md`,
+ * Copy y mappers de la pantalla Zonas (`02-Analisis-Visual/pantallas/zonas.md`,
  * secciones 1 "Hero", 2 "Lista de zonas" y 3 "Avances desde el territorio") y del
  * detalle de zona (misma pagina, seccion "Detalle de zona `/zonas/[slug]`").
- * Fuente de datos: `SEED_ZONES` / `SEED_PROJECTS` de `@oneimpact/shared`, el
- * mismo dataset que consumen la API y MSW. El copy va en espanol tal cual el vault.
+ * Los datos ya no se derivan del seed en este modulo: llegan por `src/api/hooks`
+ * (`useZones`, `useProjects`, `useZone`), que consumen la API o MSW segun
+ * `EXPO_PUBLIC_API_URL`. Este archivo solo mapea `Zone`/`Project` (el contrato
+ * de `@oneimpact/shared`) a las vistas que consumen las secciones, y conserva
+ * el copy estatico (contenido de marketing, no dato remoto).
  */
-import { SEED_PROJECTS, SEED_ZONES, type SeedProject } from '@oneimpact/shared';
+import type { Project, Zone } from '@oneimpact/shared';
 
 /**
  * Mapa clave de asset (tal como lo entrega el seed) -> `require()`. Metro exige
@@ -37,6 +40,18 @@ export function assetFor(key: string): number {
   return asset;
 }
 
+/**
+ * Non-throwing counterpart of `assetFor` for the remote path (D3): `Zone`/
+ * `Project` records now come from the API (or MSW), so an image key without a
+ * local `require()` in `ASSETS` -- e.g. content added later through the admin,
+ * not yet bundled as a local asset -- must not crash the screen. Callers use
+ * this to build a view and drop it if the image does not resolve, instead of
+ * throwing.
+ */
+export function assetForKey(key: string): number | undefined {
+  return ASSETS[key];
+}
+
 export interface ZoneView {
   slug: string;
   name: string;
@@ -47,45 +62,50 @@ export interface ZoneView {
 
 export interface AdvanceView {
   id: string;
-  zoneSlug: string;
   title: string;
   body: string;
   image: number;
   year: number;
 }
 
-export const zones: ZoneView[] = [...SEED_ZONES]
-  .sort((a, b) => a.order - b.order)
-  .map((zone) => ({
+/**
+ * `Zone -> ZoneView` (D3). Returns `undefined` when `imageKey` has no mapped
+ * asset instead of throwing -- see `assetForKey`. Callers filter the
+ * `undefined` entries out of the list.
+ */
+export function toZoneView(zone: Zone): ZoneView | undefined {
+  const image = assetForKey(zone.imageKey);
+  if (image === undefined) {
+    return undefined;
+  }
+  return {
     slug: zone.slug,
     name: zone.name,
     description: zone.description,
-    image: assetFor(zone.imageKey),
+    image,
     order: zone.order,
-  }));
-
-export const advances: AdvanceView[] = SEED_PROJECTS.map((project) => {
-  const [update] = project.updates;
-  return {
-    id: update.id,
-    zoneSlug: project.zoneSlug,
-    title: update.title,
-    body: update.body,
-    image: assetFor(update.mediaKey ?? project.coverKey ?? ''),
-    year: new Date(update.publishedAt).getUTCFullYear(),
   };
-});
-
-export function getZone(slug: string): ZoneView | undefined {
-  return zones.find((zone) => zone.slug === slug);
 }
 
-export function advancesByZone(slug: string): AdvanceView[] {
-  return advances.filter((advance) => advance.zoneSlug === slug);
-}
-
-export function projectsByZone(slug: string): SeedProject[] {
-  return SEED_PROJECTS.filter((project) => project.zoneSlug === slug);
+/**
+ * `Project -> AdvanceView` (D2): the advance card is derived straight from
+ * the project (`title`, `summary`, `coverKey`, the year of `createdAt`), not
+ * from a separate `ProjectUpdate`. One request (`useProjects()`) covers the
+ * whole carousel -- no N+1 per project. Returns `undefined` when `coverKey`
+ * is missing or has no mapped asset (D3); callers filter those out.
+ */
+export function toAdvanceView(project: Project): AdvanceView | undefined {
+  const image = project.coverKey ? assetForKey(project.coverKey) : undefined;
+  if (image === undefined) {
+    return undefined;
+  }
+  return {
+    id: project.id,
+    title: project.title,
+    body: project.summary,
+    image,
+    year: new Date(project.createdAt).getUTCFullYear(),
+  };
 }
 
 export interface ZonesScreenCopy {
