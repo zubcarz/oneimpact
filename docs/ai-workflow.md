@@ -699,3 +699,66 @@ construccion del payload de tarjeta, ninguna supresion nueva.
 - **PREGUNTA ABIERTA**: si el usuario abandona en el paso de pago queda una
   cuenta sin suscripcion. El spec no lo cubre y no se invento un flujo de
   recuperacion; hoy un login posterior lleva al dashboard vacio.
+
+## 2026-08-23 -- Admin: auth con cookie y gestion de proyectos [admin-auth-and-projects]
+
+**Pedido**: ejecutar de punta a punta el plan
+`.claude/plans/20260823-admin-auth-and-projects.plan.md` (7 fases: pre-flight,
+auth con cookie httpOnly y guarda de rol, shell y tabla, Playwright + CI,
+formularios, avances con imagen, e2e del flujo completo) con
+`/run-plan-worktree` en un worktree aislado, para no tocar el arbol principal.
+**Herramientas**: `/run-plan-worktree`, agentes `implementer` (una invocacion
+por accion o por grupo coherente de acciones) y `verifier` (gate por fase y
+bateria completa al cierre). El `debugger` no hizo falta. Fuentes leidas: los
+docs que trae el propio paquete (`node_modules/next/dist/docs/`), el vault
+(`admin-web.md`), y el codigo de `apps/api` y `packages/*` para cada firma que
+se afirmo.
+**Entrego**: commits `6d83c96` (env/session/JWT sin dependencias, los dos
+clientes de API, route handlers de login y logout, gateway BFF con
+refresh-and-retry, `src/proxy.ts`, pagina 403, primitivos Button/Input/Label/
+FieldError, LoginForm, ADR-002), `f48f0bd` (Sidebar/Topbar/PageHeader, tabla de
+proyectos con filtros por URL, Table/Badge/ProgressBar/Select/EmptyState,
+loading y error), `0ca9f1d` (Playwright con login real, dos projects
+autenticado/anonimo, job `admin-e2e` en CI, guarda de SKIP en
+`quality-check.sh`), `3fdff8b` (TanStack Query, formularios de alta y edicion,
+conversion `datetime-local` en UTC), `0eecd8f` (avances con progreso e imagen,
+decision D4 completa), `ce681d5` (`projects.spec.ts` de punta a punta).
+
+**Revision**: gate por fase acotado a lo que la fase declaraba, mas
+`--scope all --only typecheck,lint,unit` en cada cierre (6 scopes verdes;
+admin llego a 159 tests unitarios). Los casos negativos de auth se ejecutaron
+con curl contra la API y el panel reales, no de memoria: sin cookie `/projects`
+da 307 a `/login`; el gateway sin cookie da 401 JSON; credenciales malas dan
+401 sin escribir cookie; una cookie manipulada da 307 a `/login`; el rol `USER`
+cae en la pagina 403 con la URL intacta. Se verifico ademas que el HTML de
+`/projects` autenticado no contiene `eyJ` ni `oi_access`, o sea que el JWT no
+viaja en el payload RSC, y que no hay ningun uso de `localStorage` en el admin.
+Playwright quedo en 5/5 tanto contra `next dev` como contra `next start`.
+
+**Ajustes manuales**: (1) el plan pedia `src/middleware.ts`, pero los docs del
+paquete dicen que Next 16 lo deprecó y lo renombro a `proxy.js`
+(`middleware.md`, `proxy.md:774`): se implemento `src/proxy.ts` con export
+`proxy`, y por la colision de nombres el BFF paso a llamarse `/api/gateway` en
+vez de `/api/proxy`. (2) El mismo doc (`proxy.md:223`) dice que Proxy corre en
+Node.js y que fijar `runtime` **lanza error**, asi que el riesgo de Edge que
+anotaba la fase 1 no existe. (3) Se midio que `z.url()` de zod 4.4.3 **acepta**
+`local-simulated://...`, al reves de lo que asumia el plan: la decision D4 no
+cambia (se omite `mediaUrl`) pero el motivo pasa a ser que la API guarda el
+valor verbatim en `mediaKey` y persistiria una URL que no resuelve. (4) El
+gateway serializa el refresh por token: la API revoca toda la cadena al ver un
+refresh rotado dos veces, asi que dos peticiones expirando a la vez cerraban la
+sesion entera. (5) El seed tiene 2 proyectos en `amazonia`, no 1, y ningun
+`PLANNED`: los asserts se ajustaron a los datos reales. (6) `loginSchema` y
+cuatro campos de `createProjectSchema` no traen mensaje en espanol en
+`packages/shared`; se cubrio con error maps locales **sin tocar el contrato**.
+(7) `apps/admin/.env.example` no existia y `.env*` lo ignoraba.
+
+**Pendiente**: el job `admin-e2e` de CI esta **SIN CONFIRMAR** hasta ver un run
+verde tras el push. La revision **visual en navegador** no se hizo: se validaron
+HTML servido, curl y Playwright. `apps/api test:e2e` queda en rojo **en local**
+por dos causas ajenas al codigo del admin: el e2e del panel escribe en la base
+de desarrollo compartida y los e2e de la API afirman conteos exactos, y
+`test/jest-e2e.json` no carga dotenv (en CI son jobs separados con su propia
+Postgres, y la variable la define el job); se limpia con reset + `pnpm db:setup`.
+Seguimiento de contrato para el item 14: agregar `publicUrl` a
+`signedUploadSchema` y los mensajes en espanol que faltan en `packages/shared`.

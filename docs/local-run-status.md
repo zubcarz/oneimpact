@@ -4,6 +4,10 @@ Instantanea del **2026-08-22**, con los items 00-05 del roadmap en `main`
 (mobile: fundacion + Inicio + Zonas + Suscripcion; api: health, catalog,
 projects, auth/roles; admin: solo placeholders).
 
+Actualizado el **2026-08-23** solo en lo que toca al **admin** (item 11, rama
+`feat/admin-auth-and-projects`): sus secciones 1, 4 y 8. El resto del documento
+sigue siendo la foto del 22 y puede haber quedado corto respecto de mobile.
+
 El doc canonico de setup completo es [local-development.md](local-development.md).
 Esto es el atajo para "quiero ver la app corriendo ahora" mas las particularidades
 del entorno de esta maquina.
@@ -24,10 +28,15 @@ pnpm dev:api
 
 # Mobile (Metro) -- desde la raiz, asi salen el QR y los atajos a/w/r
 pnpm dev:mobile
+
+# Admin en :5001 -- necesita la API arriba y la base sembrada
+pnpm dev:admin
 ```
 
-El admin (`pnpm dev:admin`, :5001) todavia no aporta nada: sus paginas son
-placeholders hasta el item 11.
+El admin no habla con la API directamente desde el navegador: pasa por sus
+propios route handlers, que leen `API_URL` (server-only). Los valores de
+desarrollo estan en `apps/admin/.env.example`; copiarlo a `apps/admin/.env` si
+la API no esta en `http://localhost:5000`.
 
 ## 2. Puertos
 
@@ -88,6 +97,44 @@ para eso hay que correrlo en una terminal propia.
 
 Usuarios del seed: `admin@oneimpact.org / Admin123!` (ADMIN) y
 `ana@oneimpact.org / User123!` (USER).
+
+**Admin** (item 11, en la rama `feat/admin-auth-and-projects`) en
+`http://localhost:5001`. Deja de ser placeholders: es un panel usable de punta a
+punta contra la API local.
+
+- `/login` -- form con `react-hook-form` + `loginSchema` de `packages/shared`.
+  Las credenciales van a `POST /api/auth/login`
+  (`apps/admin/src/app/api/auth/login/route.ts`), que llama a la API y deja
+  access y refresh en **cookies httpOnly**. Los tokens nunca llegan al body de la
+  respuesta ni a `localStorage`.
+- Guarda de rutas en `apps/admin/src/proxy.ts` (en Next 16 el archivo
+  `middleware.ts` esta deprecado y se llama `proxy.ts`): sin cookie redirige a
+  `/login`; con sesion de rol `USER` reescribe a `/403`. `/` redirige a
+  `/projects`.
+- `/projects` -- tabla con progreso, filtros por zona y por estado (se reflejan
+  en la query string) y enlace a cada proyecto. Datos del seed: 5 proyectos
+  (4 `ACTIVE` + 1 `COMPLETED`), 2 de ellos en `amazonia`; ninguno `PLANNED`.
+- `/projects/new` y `/projects/[id]` -- alta y edicion, con
+  `createProjectSchema` / `updateProjectSchema` de `packages/shared`.
+- `/projects/[id]/updates` -- publicacion de avances con porcentaje e imagen. La
+  imagen pide una signed URL a la API y sube directo al bucket; en local la API
+  responde `simulated: true` (no hay credenciales de Supabase) y el avance se
+  publica sin imagen. Para ver un avance con imagen, pegar una URL absoluta en el
+  campo "URL de imagen".
+- `/dashboard`, `/zones`, `/users` y `/subscriptions` **siguen siendo
+  placeholders**: son del item 13.
+
+Playwright (`login.spec.ts` y `projects.spec.ts`):
+
+```bash
+pnpm --filter @oneimpact/admin test:e2e
+```
+
+Playwright levanta el admin por su cuenta (`webServer` con
+`reuseExistingServer`), pero **la API y Postgres tienen que estar arriba**. El
+`globalSetup` inicia sesion una vez por la UI real y guarda el estado en
+`apps/admin/e2e/.auth/` (ignorado por git: contiene una cookie de sesion de
+verdad).
 
 ## 5. Comprobacion rapida por curl
 
@@ -199,3 +246,32 @@ despues del install.
   (12 suites, 42 tests) tras los arreglos de web
 - SIN CONFIRMAR: prueba en dispositivo real con Expo Go, y el video del hero
   (`expo-video`) en movimiento -- la captura muestra el poster, no el video.
+
+### 8.1 Admin (item 11, 2026-08-23)
+
+- [OK] `bash scripts/dev/quality-check.sh --scope all --only typecheck,lint,unit`
+  en verde en los 6 scopes (shared 44, ui-tokens 0, api-client 7, api 120,
+  mobile 83, admin 159)
+- [OK] `pnpm --filter @oneimpact/admin test:e2e`: 5/5 verdes, tanto contra
+  `next dev` como contra `next start` (build de produccion, que es lo que usa CI)
+- [FAIL] `pnpm --filter @oneimpact/api test:e2e` en local, por dos causas ajenas
+  al codigo del admin:
+  1. `projects.spec.ts` del admin **escribe** en la base de desarrollo
+     compartida, y los e2e de la API afirman conteos exactos (`toBe(5)` recibio
+     9 y 10). En CI no puede pasar: los jobs `api-e2e` y `admin-e2e` estan
+     separados y cada uno levanta su propio service `postgres:16-alpine`.
+     Limpieza en local: reset de la base + `pnpm --filter @oneimpact/api db:setup`.
+  2. `apps/api/test/jest-e2e.json` no carga dotenv y
+     `apps/api/test/seed.e2e-spec.ts` instancia `PrismaClient` fuera de Nest, asi
+     que en local hace falta `DATABASE_URL` exportada en el shell. Preexistente y
+     ajeno al item 11; en CI el job define la variable.
+- SIN CONFIRMAR: el job `admin-e2e` de CI. No se puede dar por bueno hasta que
+  haya un push con un run verde en GitHub.
+- SIN CONFIRMAR: revision visual del panel en el navegador. Lo que se comprobo es
+  el HTML servido, `curl` y los specs de Playwright, no el aspecto de las
+  pantallas.
+- Nota: `/403` responde HTTP **200** (App Router solo emite ese status con
+  `forbidden()`, que exige `experimental.authInterrupts`) y
+  `/projects/<id-inexistente>` responde **200** por el streaming que arranca el
+  `loading.tsx` del segmento. Ninguno de los dos tiene impacto de seguridad: la
+  autorizacion real la hace la API, que si responde 401/403.

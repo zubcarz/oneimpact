@@ -24,6 +24,10 @@ cd "$ROOT" || exit 2
 FAILED=0
 SUMMARY=()
 
+# Probed before running the admin e2e step. Overridable for a stack on another
+# port (see `PORT` in docs/local-run-status.md).
+API_HEALTH_URL="${API_HEALTH_URL:-http://localhost:5000/health}"
+
 wants() { [ -z "$ONLY" ] || echo ",$ONLY," | grep -q ",$1,"; }
 
 run_step() {
@@ -71,7 +75,21 @@ esac
 case "$SCOPE" in
   admin|all)
     pkg_steps "@oneimpact/admin" "apps/admin"
-    if wants e2e; then run_step "apps/admin e2e (playwright)" pnpm --filter @oneimpact/admin test:e2e; fi
+    if wants e2e; then
+      # Same shape of guard as the api e2e step above: a scope that cannot run
+      # reports [SKIP], not [FAIL].
+      #
+      # The admin suite drives a browser against the real API, so it needs
+      # Postgres AND the API answering. `/health` covers both in one probe: it
+      # reports the state of the database
+      # (apps/api/src/modules/health/health.controller.ts), so a running
+      # container with a dead API -- or an API that cannot reach the database --
+      # is also caught. The panel itself is not probed: Playwright starts it
+      # through `webServer`.
+      if curl -sf -m 2 "$API_HEALTH_URL" >/dev/null 2>&1; then
+        run_step "apps/admin e2e (playwright)" pnpm --filter @oneimpact/admin test:e2e
+      else skip_step "apps/admin e2e (api not answering at $API_HEALTH_URL: pnpm db:up && pnpm dev:api)"; fi
+    fi
     ;;
 esac
 

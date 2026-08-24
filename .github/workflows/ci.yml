@@ -42,3 +42,79 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @oneimpact/api exec prisma migrate deploy
       - run: pnpm --filter @oneimpact/api test:e2e
+  # Playwright over the whole stack: Postgres + seeded API + the built panel.
+  # It is the slowest job of the workflow; if it ever gets in the way, the way
+  # out is running it only on pull requests and on main, never trimming asserts.
+  admin-e2e:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: oneimpact }
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/oneimpact?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/oneimpact?schema=public
+      # Server-only base URL used by the route handlers and the gateway of the
+      # panel (apps/admin/src/lib/env.ts).
+      API_URL: http://localhost:5000
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+      PLAYWRIGHT_BASE_URL: http://localhost:5001
+      # The suite signs in about five times per run (global setup plus the
+      # negative cases) and `retries: 1` can double that inside the same
+      # minute. The default of 10/min in apps/api/src/infra/config/env.ts would
+      # start answering 429 and fail the run for a reason that has nothing to
+      # do with the code under test.
+      AUTH_THROTTLE_LIMIT: '100'
+      # CORS_ORIGINS is deliberately not set: the default of
+      # apps/api/src/infra/config/env.ts is already http://localhost:5001. The
+      # browser never calls the API directly either -- it goes through
+      # /api/gateway on the origin of the panel -- so no preflight is involved.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @oneimpact/api exec prisma migrate deploy
+      # Unlike api-e2e, this job does need the seed: the specs sign in with the
+      # seeded accounts and assert the seeded projects.
+      - run: pnpm --filter @oneimpact/api prisma:seed
+      - run: pnpm --filter @oneimpact/api build
+      - name: Start the API
+        run: pnpm --filter @oneimpact/api start:prod > api.log 2>&1 &
+      - name: Wait for the API
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -sf -m 2 http://localhost:5000/health > /dev/null; then
+              echo "API answered /health on attempt ${attempt}"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "The API did not answer http://localhost:5000/health within 120s"
+          cat api.log || true
+          exit 1
+      # The panel is built here and served by the `webServer` of
+      # playwright.config.ts (`pnpm start` when CI is set), which is also what
+      # waits until it is ready.
+      - run: pnpm --filter @oneimpact/admin build
+      - run: pnpm --filter @oneimpact/admin exec playwright install --with-deps chromium
+      - run: pnpm --filter @oneimpact/admin test:e2e
+      # Traces and screenshots of a red run. Without them a CI failure is a
+      # timeout with no context.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: admin-e2e-report
+          path: |
+            apps/admin/playwright-report/
+            apps/admin/test-results/
+            api.log
+          if-no-files-found: ignore
+          retention-days: 7
