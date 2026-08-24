@@ -9,9 +9,20 @@ export interface SubscriptionCardProps {
   billing: Billing | null;
   status: SubscriptionStatus | null;
   activeMonths: number;
+  /** ISO datetime; `null` cuando el usuario nunca se suscribio. */
+  startedAt: string | null;
   onManagePress: () => void;
   className?: string;
   testID?: string;
+}
+
+/** "Activa desde ago 2026" (`pantallas-nuevas.md`, "Dashboard", linea 40). */
+function formatStartedAt(startedAt: string): string {
+  const formatted = new Date(startedAt).toLocaleDateString('es-ES', {
+    month: 'short',
+    year: 'numeric',
+  });
+  return `Activa desde ${formatted}`;
 }
 
 /**
@@ -25,6 +36,7 @@ export function SubscriptionCard({
   billing,
   status,
   activeMonths,
+  startedAt,
   onManagePress,
   className,
   testID,
@@ -57,6 +69,9 @@ export function SubscriptionCard({
           <Text className="mt-1 text-sm text-accent">
             {billing !== null ? `${formatMonthlyPrice(plan, billing)}/mes` : null}
           </Text>
+          {startedAt !== null ? (
+            <Text className="mt-1 text-sm text-white/70">{formatStartedAt(startedAt)}</Text>
+          ) : null}
           <Text className="mt-3 text-sm text-white/70">{`${activeMonths} meses activos`}</Text>
           <Button
             label="Gestionar"

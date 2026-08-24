@@ -67,7 +67,7 @@ export function getDashboardSummary(userId: string): DashboardSummary {
   };
 
   if (!subscription) {
-    return { plan: null, billing: null, status: null, activeMonths: 0, ...shared };
+    return { plan: null, billing: null, status: null, activeMonths: 0, startedAt: null, ...shared };
   }
 
   const plan = PLANS.find((item) => item.id === subscription.planId);
@@ -85,6 +85,7 @@ export function getDashboardSummary(userId: string): DashboardSummary {
     billing: subscription.billing,
     status: subscription.status,
     activeMonths: activeMonthsSince(new Date(subscription.startedAt), activeMonthsUntil),
+    startedAt: subscription.startedAt,
     ...shared,
   };
 }

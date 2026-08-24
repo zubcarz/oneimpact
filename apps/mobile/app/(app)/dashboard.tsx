@@ -130,6 +130,7 @@ export default function DashboardScreen() {
             billing={dashboard.billing}
             status={dashboard.status}
             activeMonths={dashboard.activeMonths}
+            startedAt={dashboard.startedAt}
             onManagePress={() => router.push('/(app)/profile')}
           />
           <JourneyLine

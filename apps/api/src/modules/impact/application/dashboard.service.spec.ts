@@ -77,6 +77,7 @@ describe('DashboardService', () => {
       billing: null,
       status: null,
       activeMonths: 0,
+      startedAt: null,
       followedProjects: 2,
       followedProjectIds: ['project-1', 'project-2'],
       journeyPoints: 4,
@@ -131,6 +132,7 @@ describe('DashboardService', () => {
     expect(summary.plan).toEqual(buildPlan());
     expect(summary.billing).toBe(Billing.MONTHLY);
     expect(summary.status).toBe(SubscriptionStatus.ACTIVE);
+    expect(summary.startedAt).toBe(subscription.startedAt.toISOString());
   });
 
   it('resolves the plan and status CANCELED for a canceled subscription, computing activeMonths up to canceledAt (not "now")', async () => {
@@ -149,5 +151,6 @@ describe('DashboardService', () => {
     expect(summary.plan).not.toBeNull();
     expect(summary.status).toBe(SubscriptionStatus.CANCELED);
     expect(summary.activeMonths).toBe(1);
+    expect(summary.startedAt).toBe(subscription.startedAt.toISOString());
   });
 });

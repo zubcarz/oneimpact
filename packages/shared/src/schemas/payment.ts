@@ -85,6 +85,7 @@ export const dashboardSummarySchema = z.object({
   billing: z.enum([Billing.MONTHLY, Billing.ANNUAL]).nullable(),
   status: z.enum([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELED]).nullable(),
   activeMonths: z.number(),
+  startedAt: z.iso.datetime().nullable(),
   followedProjects: z.number(),
   followedProjectIds: z.array(z.string()),
   latestUpdate: projectUpdateSchema.optional(),
