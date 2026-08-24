@@ -514,3 +514,96 @@ que no cambiaba ni una clase de Tailwind.
   relajado. El unico assert que se reescribio (`typeof image === 'number'`) estaba
   mal formulado desde el principio: bajo Jest un `require()` de imagen es un stub
   de `jest-expo`, no un numero.
+
+## 2026-08-23 -- Proyectos, detalle y Quienes somos [mobile-projects-and-about]
+
+**Pedido**: ejecutar el plan
+`.claude/plans/20260823-mobile-projects-and-about.plan.md` (item 08) con
+`/run-plan-worktree`, o sea en un worktree aislado para no tocar el arbol
+principal mientras corrian en paralelo los items 09 y 11. Objetivo: cerrar las
+dos rutas que el menu ya enlazaba y que no existian como pantalla, `/projects`
+(listado con filtro por zona + detalle con avances y boton Seguir) y `/about`.
+
+**Herramientas**: `/run-plan-worktree`, agente `implementer` (9 invocaciones,
+una por tarea o grupo de tareas independientes; 4 de ellas en paralelo por ser
+componentes sin archivos compartidos), agente `verifier` (5: linea base, un gate
+por fase y el cierre), skill `oneimpact-context`.
+
+**Entrego**:
+- `c3aa9bf` -- `/projects`: `FilterChips`, `ProjectCard`, secciones de la feature
+  (`ProjectsHero`, `ProjectsList`, `ProjectsSkeleton`, `ProjectsError`),
+  `src/data/projects.ts` con copy y mapper, y la ruta fina. Tests de `FilterChips`
+  y del mapper.
+- `b679bc5` -- `/projects/[id]`: `UpdateTimeline`, `FollowButton`,
+  `ProjectDetailHero`, `ProjectFacts`, `ProjectUpdates` y la ruta con el CTA
+  sticky. Tests de `UpdateTimeline` (orden) y `FollowButton` (ambos estados y
+  `disabled`).
+- `122c7d0` -- `/about`: hero con `overlay.forest80`, tres pilares sobre blanco
+  reutilizando `BenefitItem`, cierre lima con `AlliesSection` y CTA.
+
+**Revision**: gate por fase con `quality-check.sh` acotado a lo que cada fase
+declaraba, y la fase 3 con la bateria unit completa por tocar `overlays.ts` y
+`AlliesSection`, que usa Home. `apps/mobile` paso de 19 suites / 83 tests a
+**21 / 96**. Cierre con `--scope all` mas `--only bundle`: el `expo export` es lo
+que prueba de verdad que Metro resuelve las tres rutas nuevas, porque Jest corre
+en Node y no lo veria. Ademas se verificaron a mano los invariantes del repo
+sobre el diff (ninguna supresion nueva, ningun hex suelto, ninguna seccion de
+`features/` llamando hooks de red) y se confirmo con `git diff main` que el
+cambio de `AlliesSection` es un default literal identico al valor que ya tenia,
+o sea que Home no se mueve.
+
+**Ajustes manuales**:
+1. **Orden de la `ProjectCard` corregido contra el vault.** El agente puso el
+   badge de estado al lado del titulo; `pantallas-nuevas.md:8` lista imagen ->
+   titulo -> resumen -> `ProgressBar` + `%` + estado, asi que el badge va en la
+   fila del progreso. El agente lo habia marcado como desviacion menor, no lo
+   escondio, pero el spec manda.
+2. **Warnings de `react-hooks/exhaustive-deps` en `app/projects/index.tsx`.** El
+   reporte del agente los llamo preexistentes; eran de esta misma fase, porque el
+   archivo lo acababa de crear otra tarea. `zones` se derivaba con `??  []` y
+   cambiaba de referencia en cada render, rompiendo los dos `useMemo` que
+   dependian de el. Se envolvio en su propio `useMemo`.
+3. **Cita corregida en `useFollowProject.ts`.** Al reescribir el comentario
+   obsoleto, el agente atribuyo el follow al plan equivocado; se verifico contra
+   el roadmap que `d35604f` cae en el rango del item 06
+   (`api-payments-subscriptions-events`) y se corrigio. Es el tipo de dato que
+   nadie vuelve a comprobar despues.
+
+**Dos fallos del `--scope all` que NO eran del codigo**, y que valen como
+hallazgo de entorno del modo worktree:
+1. **`seed.e2e-spec.ts`, 8 tests en rojo por `DATABASE_URL not found`.** No es
+   regresion: el spec hace `new PrismaClient()` directo, sin cargar dotenv, asi
+   que depende de que la variable este en el entorno del proceso; los otros 9
+   specs la reciben via `@nestjs/config` al bootear Nest. Exportando
+   `DATABASE_URL` corren los **10 suites / 74 tests en verde**. Queda como
+   fragilidad preexistente del setup de e2e, ajena a este item.
+2. **Playwright de `admin` en rojo contra una pantalla que no era la de este
+   worktree.** El puerto 5001 estaba ocupado por otro checkout y
+   `playwright.config.ts` tiene `reuseExistingServer: true`, asi que el spec
+   probo el admin del worktree del item 11, que justo esta reescribiendo el
+   login. Levantando este admin en 5002 con `PLAYWRIGHT_BASE_URL`, el spec
+   **pasa**. Es exactamente el riesgo de puertos que advierte
+   `/run-plan-worktree`, y conviene recordarlo cuando corran dos planes a la vez.
+
+**Pendiente**:
+- **Verificacion visual en Expo Go, SIN CONFIRMAR.** Nada de lo anterior la
+  cubre: el sticky del `FollowButton` sobre el scroll (que no tape el ultimo
+  avance y respete `insets.bottom`), la apertura de la app de mapas al tocar las
+  coordenadas (en web abre pestana, en Expo Go abre la app), el ritmo de fondos
+  oscuro -> blanco -> lima en `/about`, y que Home siga identica tras el cambio
+  de `AlliesSection`.
+- **El estado "Siguiendo" no persiste entre entradas a la pantalla** (D1). El
+  contrato no expone si el usuario actual sigue un proyecto, asi que el boton es
+  optimista y local: al volver a entrar arranca en "Seguir este proyecto" aunque
+  el follow este guardado. Exponerlo es entrada de contrato del item 12.
+- **El `Alert` para invitados es temporal** (D3). Cuando el item 09 cree
+  `app/(auth)/login.tsx`, se reemplaza por `router.push(loginHref(pathname))`;
+  el `TODO(item 09)` ya esta puesto en el sitio exacto.
+- **El badge "Planeado" quedo sin verificar visualmente**: el seed no tiene
+  ningun proyecto `PLANNED` (4 `ACTIVE` y 1 `COMPLETED`, confirmado por `curl`
+  contra la API), asi que ese estado solo esta cubierto por test.
+- El copy de los tres pilares de `/about` es propuesta propia dentro del tono del
+  sitio, marcado con `// proposed` como en `seed-data.ts`: necesita una pasada de
+  aprobacion de contenido.
+- Sin deuda de tests: ninguna supresion nueva, ningun `skip`, ningun assert
+  relajado.

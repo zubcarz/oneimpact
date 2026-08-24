@@ -12,10 +12,19 @@ const BADGE_SHADOW = {
   elevation: 1,
 } as const;
 
+export interface AlliesSectionProps {
+  /**
+   * Fondo de la seccion. Default `'bg-neutral-100'`: el valor que Home ya
+   * tiene entregado. "Quienes somos" (`pantallas-nuevas.md:20`) reutiliza esta
+   * seccion con `bg-accent-light`.
+   */
+  bgClassName?: string;
+}
+
 /** Seccion 5 de Inicio: "Conoce a nuestros aliados" (`pantallas/inicio.md` #5). */
-export function AlliesSection() {
+export function AlliesSection({ bgClassName = 'bg-neutral-100' }: AlliesSectionProps) {
   return (
-    <View className="items-center bg-neutral-100 px-4 py-16">
+    <View className={`items-center px-4 py-16 ${bgClassName}`}>
       <SectionHeader
         title={alliesSection.title}
         subtitle={alliesSection.subtitle}

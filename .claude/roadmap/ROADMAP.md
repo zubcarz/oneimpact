@@ -131,7 +131,7 @@ Al cerrar un item, marcarlo en la tabla de estado de abajo.
 | 05  | api-auth-and-roles                | hecho     | `d408426..80e57ad`, mergeado a main en `07f5d04`               |
 | 06  | api-payments-subscriptions-events | hecho     | `6a24006..0573655`, mergeado a main en `d0fab7b`               |
 | 07  | mobile-data-layer-and-auth        | hecho     | `8d7c0d1..570cdf5` (merge parcial `2e45527` + cierre en main)  |
-| 08  | mobile-projects-and-about         | pendiente |                                                                |
+| 08  | mobile-projects-and-about         | hecho     | `c3aa9bf..122c7d0` en `feat/mobile-projects-and-about`          |
 | 09  | mobile-register-payment-welcome   | pendiente |                                                                |
 | 10  | mobile-dashboard-and-profile      | pendiente |                                                                |
 | 11  | admin-auth-and-projects           | pendiente |                                                                |

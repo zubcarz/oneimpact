@@ -2,9 +2,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { callApi } from '@/api/client';
 import { queryKeys } from './keys';
 
-// NOTE (D5, plan 20260822-mobile-data-layer-and-auth): `POST/DELETE
-// /v1/projects/:id/follow` is not implemented by the API yet (only the two
-// `@Get` routes exist). Only MSW (Phase 3) serves this until then.
+// `POST/DELETE /v1/projects/:id/follow` is implemented by the API
+// (`apps/api/src/modules/projects/application/follows.service.ts`, item 06 --
+// `.claude/plans/20260822-api-payments-subscriptions-events.plan.md`, `d35604f`)
+// and mirrored by MSW (`src/api/msw/handlers.ts`). Both are idempotent, so a
+// retried mutation is safe.
 export function useFollowProject() {
   const queryClient = useQueryClient();
 
