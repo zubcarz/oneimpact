@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { AuthProvider } from '@/auth';
 import { FullScreenMenu } from '@/components/layout/FullScreenMenu';
 import { contactEmail, copyright, dashboardCta, joinCta, navItems } from '@/data/nav';
@@ -29,7 +30,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn() },
 }));
 
 // `FullScreenMenu` reads `useAuth()` (D5, `20260823-mobile-register-payment-welcome.plan.md`,
@@ -41,16 +42,23 @@ jest.mock('expo-router', () => ({
 // children below `useAuth`, i.e. the wrapping this test needs is real, only
 // the session bootstrap is faked.
 let mockStatus: 'guest' | 'authed' = 'guest';
+const mockSignOut = jest.fn().mockResolvedValue(undefined);
+const MOCK_USER = { id: 'u1', name: 'Ana Rodriguez', email: 'ana@oneimpact.org', role: 'USER' };
 
 jest.mock('@/auth', () => ({
   AuthProvider: ({ children }: { children: ReactNode }) => children,
-  useAuth: () => ({ status: mockStatus }),
+  useAuth: () => ({
+    status: mockStatus,
+    user: mockStatus === 'authed' ? MOCK_USER : null,
+    signOut: mockSignOut,
+  }),
+  loginHref: () => '/(auth)/login',
 }));
 
-function renderMenu(visible = true) {
+function renderMenu(visible = true, onClose = jest.fn()) {
   return render(
     <AuthProvider>
-      <FullScreenMenu visible={visible} onClose={jest.fn()} />
+      <FullScreenMenu visible={visible} onClose={onClose} />
     </AuthProvider>,
   );
 }
@@ -58,6 +66,9 @@ function renderMenu(visible = true) {
 describe('FullScreenMenu', () => {
   beforeEach(() => {
     mockStatus = 'guest';
+    mockSignOut.mockClear();
+    (router.push as jest.Mock).mockClear();
+    (router.replace as jest.Mock).mockClear();
   });
 
   it('renders every nav destination, including the ones the footer used to own', () => {
@@ -90,5 +101,54 @@ describe('FullScreenMenu', () => {
 
     expect(screen.getByText(dashboardCta.label)).toBeTruthy();
     expect(screen.queryByText(joinCta.label)).toBeNull();
+  });
+
+  it('lets a guest reach login directly from the menu, closing it first', () => {
+    const onClose = jest.fn();
+    renderMenu(true, onClose);
+
+    fireEvent.press(screen.getByLabelText('Iniciar sesión'));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/(auth)/login');
+  });
+
+  it('hides the direct login link once there is a session', () => {
+    mockStatus = 'authed';
+    renderMenu();
+
+    expect(screen.queryByLabelText('Iniciar sesión')).toBeNull();
+  });
+
+  it('shows who is signed in, so the public screens stop looking anonymous', () => {
+    mockStatus = 'authed';
+    renderMenu();
+
+    expect(screen.getByText(MOCK_USER.name)).toBeTruthy();
+    expect(screen.getByText(MOCK_USER.email)).toBeTruthy();
+  });
+
+  it('offers sign out only with a session, and never to a guest', () => {
+    renderMenu();
+    expect(screen.queryByLabelText('Cerrar sesión')).toBeNull();
+
+    mockStatus = 'authed';
+    renderMenu();
+    expect(screen.getByLabelText('Cerrar sesión')).toBeTruthy();
+  });
+
+  it('leaves the protected group before clearing the session, so signing out never lands on login', () => {
+    mockStatus = 'authed';
+    const onClose = jest.fn();
+    renderMenu(true, onClose);
+
+    fireEvent.press(screen.getByLabelText('Cerrar sesión'));
+
+    // El orden es la razon de ser del test: si `signOut` corriera primero, el
+    // guard de `(app)` (`useRequireAuth`) reaccionaria al `guest` mandando al
+    // login, y cerrar sesion terminaria en una pantalla de login.
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(router.replace).toHaveBeenCalledWith('/');
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
   });
 });

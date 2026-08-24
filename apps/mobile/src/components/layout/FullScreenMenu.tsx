@@ -6,7 +6,7 @@ import { router, type Href } from 'expo-router';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { ArrowRight, X } from 'lucide-react-native';
 import { colors } from '@oneimpact/ui-tokens';
-import { useAuth } from '@/auth';
+import { loginHref, useAuth } from '@/auth';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { Button } from '@/components/ui';
 import {
@@ -33,12 +33,33 @@ const LOGO_SIZE = { width: 82, height: 32 };
  */
 export function FullScreenMenu({ visible, onClose }: FullScreenMenuProps) {
   const insets = useSafeAreaInsets();
-  const { status } = useAuth();
-  const menuCta = resolveMenuCta(status === 'authed');
+  const { status, user, signOut } = useAuth();
+  const isAuthed = status === 'authed';
+  const menuCta = resolveMenuCta(isAuthed);
 
   const navigateTo = (item: NavItem) => {
     onClose();
     router.push(item.href as Href);
+  };
+
+  const goToLogin = () => {
+    onClose();
+    router.push(loginHref());
+  };
+
+  /**
+   * Cierra el menu y manda a Inicio antes de limpiar la sesion.
+   *
+   * El orden importa: si el usuario tenia abierta una pantalla de `(app)`, su
+   * guard reacciona a `status === 'guest'` con un `router.replace` al login
+   * (`useRequireAuth`), y cerrar sesion terminaria en una pantalla de login en
+   * vez de en la app publica. Navegando primero, el guard ya no tiene nada que
+   * proteger cuando el estado cambia.
+   */
+  const handleSignOut = () => {
+    onClose();
+    router.replace('/');
+    void signOut();
   };
 
   return (
@@ -67,6 +88,16 @@ export function FullScreenMenu({ visible, onClose }: FullScreenMenuProps) {
             </Pressable>
           </View>
 
+          {isAuthed && user ? (
+            <View className="mt-6 rounded-2xl bg-black/10 px-4 py-3">
+              <Text className="text-xs font-bold uppercase tracking-widest text-gray-900/60">
+                Tu sesión
+              </Text>
+              <Text className="mt-1 text-base font-bold text-gray-900">{user.name}</Text>
+              <Text className="text-sm text-gray-900/70">{user.email}</Text>
+            </View>
+          ) : null}
+
           <View className="mt-8">
             {navItems.map((item) => (
               <Pressable
@@ -90,6 +121,26 @@ export function FullScreenMenu({ visible, onClose }: FullScreenMenuProps) {
               fullWidth
               onPress={() => navigateTo(menuCta)}
             />
+
+            {isAuthed ? (
+              <Button
+                label="Cerrar sesión"
+                variant="white"
+                size="lg"
+                fullWidth
+                onPress={handleSignOut}
+                className="mt-3"
+              />
+            ) : (
+              <Button
+                label="Iniciar sesión"
+                variant="white"
+                size="lg"
+                fullWidth
+                onPress={goToLogin}
+                className="mt-3"
+              />
+            )}
 
             <View className="mt-6 flex-row items-center justify-between border-t border-black/10 pt-5">
               <Text className="text-sm font-bold text-gray-900">{contactEmail}</Text>
